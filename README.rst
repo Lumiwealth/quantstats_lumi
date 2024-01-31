@@ -58,11 +58,11 @@ Here's an example of a simple tear sheet analyzing a strategy:
 Quick Start
 ===========
 
-Install QuantStats using pip:
+Install QuantStats Lumi using pip:
 
 .. code:: bash
 
-	$ pip install quantstats_lumi
+	$ pip install quantstats-lumi
 
 .. code:: python
 
