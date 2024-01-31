@@ -43,7 +43,7 @@ except ImportError:
     from IPython.core.display import display as iDisplay
 
 
-def _get_trading_periods(periods_per_year=252):
+def _get_trading_periods(periods_per_year=365):
     """returns trading periods per year and half year"""
     half_year = _ceil(periods_per_year / 2)
     return periods_per_year, half_year
@@ -69,7 +69,7 @@ def html(
     title="Strategy Tearsheet",
     output=None,
     compounded=True,
-    periods_per_year=252,
+    periods_per_year=365,
     download_filename="quantstats-tearsheet.html",
     figfmt="svg",
     template_path=None,
@@ -511,7 +511,7 @@ def full(
     figsize=(8, 5),
     display=True,
     compounded=True,
-    periods_per_year=252,
+    periods_per_year=365,
     match_dates=True,
     **kwargs,
 ):
@@ -665,7 +665,7 @@ def basic(
     figsize=(8, 5),
     display=True,
     compounded=True,
-    periods_per_year=252,
+    periods_per_year=365,
     match_dates=True,
     **kwargs,
 ):
@@ -748,7 +748,7 @@ def metrics(
     mode="basic",
     sep=False,
     compounded=True,
-    periods_per_year=252,
+    periods_per_year=365,
     prepare_returns=True,
     match_dates=True,
     **kwargs,
@@ -1251,7 +1251,7 @@ def plots(
     figsize=(8, 5),
     mode="basic",
     compounded=True,
-    periods_per_year=252,
+    periods_per_year=365,
     prepare_returns=True,
     match_dates=True,
     **kwargs,

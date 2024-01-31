@@ -233,7 +233,7 @@ def avg_loss(returns, aggregate=None, compounded=True, prepare_returns=True):
     return returns[returns < 0].dropna().mean()
 
 
-def volatility(returns, periods=252, annualize=True, prepare_returns=True):
+def volatility(returns, periods=365, annualize=True, prepare_returns=True):
     """Calculates the volatility of returns for a period"""
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
@@ -245,7 +245,7 @@ def volatility(returns, periods=252, annualize=True, prepare_returns=True):
 
 
 def rolling_volatility(
-    returns, rolling_period=126, periods_per_year=252, prepare_returns=True
+    returns, rolling_period=126, periods_per_year=365, prepare_returns=True
 ):
     """Calculates the rolling volatility of returns for a period
     Args:
@@ -259,7 +259,7 @@ def rolling_volatility(
     return returns.rolling(rolling_period).std() * _np.sqrt(periods_per_year)
 
 
-def implied_volatility(returns, periods=252, annualize=True):
+def implied_volatility(returns, periods=365, annualize=True):
     """Calculates the implied volatility of returns for a period"""
     logret = _utils.log_returns(returns)
     if annualize:
@@ -284,7 +284,7 @@ def autocorr_penalty(returns, prepare_returns=False):
 # ======= METRICS =======
 
 
-def sharpe(returns, rf=0.0, periods=252, annualize=True, smart=False):
+def sharpe(returns, rf=0.0, periods=365, annualize=True, smart=False):
     """
     Calculates the sharpe ratio of access returns
 
@@ -294,7 +294,7 @@ def sharpe(returns, rf=0.0, periods=252, annualize=True, smart=False):
     Args:
         * returns (Series, DataFrame): Input return series
         * rf (float): Risk-free rate expressed as a yearly (annualized) return
-        * periods (int): Freq. of returns (252/365 for daily, 12 for monthly)
+        * periods (int): Freq. of returns
         * annualize: return annualize sharpe?
         * smart: return smart sharpe ratio
     """
@@ -314,12 +314,12 @@ def sharpe(returns, rf=0.0, periods=252, annualize=True, smart=False):
     return res
 
 
-def smart_sharpe(returns, rf=0.0, periods=252, annualize=True):
+def smart_sharpe(returns, rf=0.0, periods=365, annualize=True):
     """Calculates the smart sharpe ratio
     Args:
         * returns (Series, DataFrame): Input return series
         * rf (float): Risk-free rate expressed as a yearly (annualized) return
-        * periods (int): Freq. of returns (252/365 for daily, 12 for monthly)
+        * periods (int): Freq. of returns
         * annualize: return annualize sharpe?
     """
     return sharpe(returns, rf, periods, annualize, True)
@@ -330,7 +330,7 @@ def rolling_sharpe(
     rf=0.0,
     rolling_period=126,
     annualize=True,
-    periods_per_year=252,
+    periods_per_year=365,
     prepare_returns=True,
 ):
     """Calculates the rolling sharpe ratio
@@ -354,7 +354,7 @@ def rolling_sharpe(
     return res
 
 
-def sortino(returns, rf=0, periods=252, annualize=True, smart=False):
+def sortino(returns, rf=0, periods=365, annualize=True, smart=False):
     """
     Calculates the sortino ratio of access returns
 
@@ -383,19 +383,19 @@ def sortino(returns, rf=0, periods=252, annualize=True, smart=False):
     return res
 
 
-def smart_sortino(returns, rf=0, periods=252, annualize=True):
+def smart_sortino(returns, rf=0, periods=365, annualize=True):
     """Calculates the smart sortino ratio
     Args:
         * returns (Series, DataFrame): Input return series
         * rf (float): Risk-free rate expressed as a yearly (annualized) return
-        * periods (int): Freq. of returns (252/365 for daily, 12 for monthly)
+        * periods (int): Freq. of returns
         * annualize: return annualize sharpe?
     """
     return sortino(returns, rf, periods, annualize, True)
 
 
 def rolling_sortino(
-    returns, rf=0, rolling_period=126, annualize=True, periods_per_year=252, **kwargs
+    returns, rf=0, rolling_period=126, annualize=True, periods_per_year=365, **kwargs
 ):
     """Calculates the rolling sortino ratio
     Args:
@@ -424,7 +424,7 @@ def rolling_sortino(
     return res
 
 
-def adjusted_sortino(returns, rf=0, periods=252, annualize=True, smart=False):
+def adjusted_sortino(returns, rf=0, periods=365, annualize=True, smart=False):
     """
     Jack Schwager's version of the Sortino ratio allows for
     direct comparisons to the Sharpe. See here for more info:
@@ -435,13 +435,13 @@ def adjusted_sortino(returns, rf=0, periods=252, annualize=True, smart=False):
 
 
 def probabilistic_ratio(
-    series, rf=0.0, base="sharpe", periods=252, annualize=False, smart=False
+    series, rf=0.0, base="sharpe", periods=365, annualize=False, smart=False
 ):
     """Calculates the probabilistic sharpe ratio
     Args:
         * series (Series, DataFrame): Input return series
         * rf (float): Risk-free rate expressed as a yearly (annualized) return
-        * periods (int): Freq. of returns (252/365 for daily, 12 for monthly)
+        * periods (int): Freq. of returns
         * annualize: return annualize sharpe?
         * smart: return smart sharpe ratio
     """
@@ -470,18 +470,18 @@ def probabilistic_ratio(
     psr = _norm.cdf(ratio)
 
     if annualize:
-        return psr * (252**0.5)
+        return psr * (365**0.5)
     return psr
 
 
 def probabilistic_sharpe_ratio(
-    series, rf=0.0, periods=252, annualize=False, smart=False
+    series, rf=0.0, periods=365, annualize=False, smart=False
 ):
     """Calculates the probabilistic sharpe ratio
     Args:
         * series (Series, DataFrame): Input return series
         * rf (float): Risk-free rate expressed as a yearly (annualized) return
-        * periods (int): Freq. of returns (252/365 for daily, 12 for monthly)
+        * periods (int): Freq. of returns
         * annualize: return annualize sharpe?
         * smart: return smart sharpe ratio
     """
@@ -491,13 +491,13 @@ def probabilistic_sharpe_ratio(
 
 
 def probabilistic_sortino_ratio(
-    series, rf=0.0, periods=252, annualize=False, smart=False
+    series, rf=0.0, periods=365, annualize=False, smart=False
 ):
     """Calculates the probabilistic sortino ratio
     Args:
         * series (Series, DataFrame): Input return series
         * rf (float): Risk-free rate expressed as a yearly (annualized) return
-        * periods (int): Freq. of returns (252/365 for daily, 12 for monthly)
+        * periods (int): Freq. of returns
         * annualize: return annualize sharpe?
         * smart: return smart sharpe ratio"""
     return probabilistic_ratio(
@@ -506,14 +506,14 @@ def probabilistic_sortino_ratio(
 
 
 def probabilistic_adjusted_sortino_ratio(
-    series, rf=0.0, periods=252, annualize=False, smart=False
+    series, rf=0.0, periods=365, annualize=False, smart=False
 ):
     """Calculates the probabilistic adjusted sortino ratio
 
     Args:
         * series (Series, DataFrame): Input return series
         * rf (float): Risk-free rate expressed as a yearly (annualized) return
-        * periods (int): Freq. of returns (252/365 for daily, 12 for monthly)
+        * periods (int): Freq. of returns
         * annualize: return annualize sharpe?
         * smart: return smart sharpe ratio"""
     return probabilistic_ratio(
@@ -526,14 +526,14 @@ def probabilistic_adjusted_sortino_ratio(
     )
 
 
-def treynor_ratio(returns, benchmark, periods=252.0, rf=0.0):
+def treynor_ratio(returns, benchmark, periods=365.0, rf=0.0):
     """
     Calculates the Treynor ratio
 
     Args:
         * returns (Series, DataFrame): Input return series
         * benchmatk (String, Series, DataFrame): Benchmark to compare beta to
-        * periods (int): Freq. of returns (252/365 for daily, 12 for monthly)
+        * periods (int): Freq. of returns
     """
     if isinstance(returns, _pd.DataFrame):
         returns = returns[returns.columns[0]]
@@ -544,7 +544,7 @@ def treynor_ratio(returns, benchmark, periods=252.0, rf=0.0):
     return (comp(returns) - rf) / beta
 
 
-def omega(returns, rf=0.0, required_return=0.0, periods=252):
+def omega(returns, rf=0.0, required_return=0.0, periods=365):
     """
     Determines the Omega ratio of a strategy.
     See https://en.wikipedia.org/wiki/Omega_ratio for more details.
@@ -582,7 +582,7 @@ def gain_to_pain_ratio(returns, rf=0, resolution="D"):
     return returns.sum() / downside
 
 
-def cagr(returns, rf=0.0, compounded=True, periods=252):
+def cagr(returns, rf=0.0, compounded=True, periods=365):
     """
     Calculates the communicative annualized growth return
     (CAGR%) of access returns
@@ -607,7 +607,7 @@ def cagr(returns, rf=0.0, compounded=True, periods=252):
     return res
 
 
-def rar(returns, rf=0.0, periods=252):
+def rar(returns, rf=0.0, periods=365):
     """
     Calculates the risk-adjusted return of access returns
     (CAGR / exposure. takes time into account.)
@@ -639,7 +639,7 @@ def kurtosis(returns, prepare_returns=True):
     return returns.kurtosis()
 
 
-def calmar(returns, prepare_returns=True, periods=252):
+def calmar(returns, prepare_returns=True, periods=365):
     """Calculates the calmar ratio (CAGR% / MaxDD%)"""
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
@@ -982,7 +982,7 @@ def information_ratio(returns, benchmark, prepare_returns=True):
     return diff_rets.mean() / diff_rets.std()
 
 
-def greeks(returns, benchmark, periods=252.0, prepare_returns=True):
+def greeks(returns, benchmark, periods=365.0, prepare_returns=True):
     """Calculates alpha and beta of the portfolio"""
     # ----------------------------
     # data cleanup
@@ -1008,7 +1008,7 @@ def greeks(returns, benchmark, periods=252.0, prepare_returns=True):
     ).fillna(0)
 
 
-def rolling_greeks(returns, benchmark, periods=252, prepare_returns=True):
+def rolling_greeks(returns, benchmark, periods=365, prepare_returns=True):
     """Calculates rolling alpha and beta of the portfolio"""
     if prepare_returns:
         returns = _utils._prepare_returns(returns)

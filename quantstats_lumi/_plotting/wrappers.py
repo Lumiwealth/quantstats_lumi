@@ -19,24 +19,18 @@
 # limitations under the License.
 
 import warnings
-import matplotlib.pyplot as _plt
-from matplotlib.ticker import (
-    StrMethodFormatter as _StrMethodFormatter,
-    FuncFormatter as _FuncFormatter,
-)
 
+import matplotlib.pyplot as _plt
 import numpy as _np
-from pandas import DataFrame as _df
 import pandas as _pd
 import seaborn as _sns
+from matplotlib.ticker import FuncFormatter as _FuncFormatter
+from matplotlib.ticker import StrMethodFormatter as _StrMethodFormatter
+from pandas import DataFrame as _df
 
-from .. import (
-    stats as _stats,
-    utils as _utils,
-)
-
+from .. import stats as _stats
+from .. import utils as _utils
 from . import core as _core
-
 
 _FLATUI_COLORS = ["#fedd78", "#348dc1", "#af4b64", "#4fa487", "#9b59b6", "#808080"]
 _GRAYSCALE_COLORS = (len(_FLATUI_COLORS) * ["black"]) + ["white"]
@@ -73,7 +67,6 @@ def snapshot(
     log_scale=False,
     **kwargs,
 ):
-
     strategy_colname = kwargs.get("strategy_col", "Strategy")
 
     multi_column = False
@@ -277,7 +270,6 @@ def earnings(
     savefig=None,
     show=True,
 ):
-
     colors = _GRAYSCALE_COLORS if grayscale else _FLATUI_COLORS
     alpha = 0.5 if grayscale else 0.8
 
@@ -389,7 +381,6 @@ def returns(
     show=True,
     prepare_returns=True,
 ):
-
     title = "Cumulative Returns" if compound else "Returns"
     if benchmark is not None:
         if isinstance(benchmark, str):
@@ -443,7 +434,6 @@ def log_returns(
     show=True,
     prepare_returns=True,
 ):
-
     title = "Cumulative Returns" if compound else "Returns"
     if benchmark is not None:
         if isinstance(benchmark, str):
@@ -498,7 +488,6 @@ def daily_returns(
     prepare_returns=True,
     active=False,
 ):
-
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
         if active and benchmark is not None:
@@ -546,7 +535,6 @@ def yearly_returns(
     show=True,
     prepare_returns=True,
 ):
-
     title = "EOY Returns"
     if benchmark is not None:
         title += "  vs Benchmark"
@@ -636,7 +624,6 @@ def histogram(
     show=True,
     prepare_returns=True,
 ):
-
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
         if benchmark is not None:
@@ -684,7 +671,6 @@ def drawdown(
     savefig=None,
     show=True,
 ):
-
     dd = _stats.to_drawdown_series(returns)
 
     fig = _core.plot_timeseries(
@@ -755,7 +741,7 @@ def rolling_beta(
     benchmark,
     window1=126,
     window1_label="6-Months",
-    window2=252,
+    window2=365,
     window2_label="12-Months",
     lw=1.5,
     fontname="Arial",
@@ -767,7 +753,6 @@ def rolling_beta(
     show=True,
     prepare_returns=True,
 ):
-
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
 
@@ -799,7 +784,7 @@ def rolling_volatility(
     benchmark=None,
     period=126,
     period_label="6-Months",
-    periods_per_year=252,
+    periods_per_year=365,
     lw=1.5,
     fontname="Arial",
     grayscale=False,
@@ -809,7 +794,6 @@ def rolling_volatility(
     savefig=None,
     show=True,
 ):
-
     returns = _stats.rolling_volatility(returns, period, periods_per_year)
 
     if benchmark is not None:
@@ -843,7 +827,7 @@ def rolling_sharpe(
     rf=0.0,
     period=126,
     period_label="6-Months",
-    periods_per_year=252,
+    periods_per_year=365,
     lw=1.25,
     fontname="Arial",
     grayscale=False,
@@ -853,7 +837,6 @@ def rolling_sharpe(
     savefig=None,
     show=True,
 ):
-
     returns = _stats.rolling_sharpe(
         returns,
         rf,
@@ -893,7 +876,7 @@ def rolling_sortino(
     rf=0.0,
     period=126,
     period_label="6-Months",
-    periods_per_year=252,
+    periods_per_year=365,
     lw=1.25,
     fontname="Arial",
     grayscale=False,
@@ -903,7 +886,6 @@ def rolling_sortino(
     savefig=None,
     show=True,
 ):
-
     returns = _stats.rolling_sortino(returns, rf, period, True, periods_per_year)
 
     if benchmark is not None:
