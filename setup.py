@@ -74,5 +74,7 @@ setup(
         ],
     },
     include_package_data=True,
-    package_data={"static": "quantstats/report.html*"},
+    package_data={
+        "quantstats_lumi": ["report.html"],
+    },
 )
