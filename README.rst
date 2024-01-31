@@ -28,6 +28,17 @@
 
 \
 
+Fork of Original QuantStats by Ran Aroussi
+==========================================
+
+This is a forked version of the original QuantStats library by Ran Aroussi. The original library can be found at https://github.com/ranaroussi/quantstats
+
+This forked version was created because it seems that the original library is no longer being maintained. The original library has a number of issues and pull requests that have been open for a long time and have not been addressed. This forked version aims to address some of these issues and pull requests.
+
+This forked version is created and maintained by the Lumiwealth team. We are a team of data scientists and software engineers who are passionate about quantitative finance and algorithmic trading. We use QuantStats in our daily work with the Lumibot library and we want to make sure that QuantStats is a reliable and well-maintained library.
+
+If you're interested in learning how to make your own trading algorithms, check out our Lumibot library at https://github.com/Lumiwealth/lumibot and check out our courses at https://lumiwealth.com
+
 QuantStats: Portfolio analytics for quants
 ==========================================
 
