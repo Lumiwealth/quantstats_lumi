@@ -67,7 +67,7 @@ Install QuantStats Lumi using pip:
 .. code:: python
 
     %matplotlib inline
-    import quantstats as qs
+    import quantstats_lumi as qs
 
     # extend pandas functionality with metrics, etc.
     qs.extend_pandas()
