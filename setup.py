@@ -35,7 +35,7 @@ setup(
     version=version,
     description="Portfolio analytics for quants",
     long_description=long_description,
-    url="https://github.com/Lumiwealth/quanstats_lumi",
+    url="https://github.com/Lumiwealth/quantstats_lumi",
     author="Robert Grzesik (Lumiwealth)",
     author_email="rob@lumiwealth.com",
     license="Apache Software License",
