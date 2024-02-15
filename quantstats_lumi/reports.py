@@ -859,6 +859,7 @@ def metrics(
     metrics["~~~~~~~~~~~~~~"] = blank
 
     metrics["Sharpe"] = _stats.sharpe(df, rf, win_year, True)
+    metrics["ROMaD"] = _stats.romad(df, win_year, True)
     metrics["Prob. Sharpe Ratio %"] = (
         _stats.probabilistic_sharpe_ratio(df, rf, win_year, False) * pct
     )

@@ -1162,3 +1162,16 @@ def monthly_returns(returns, eoy=True, compounded=True, prepare_returns=True):
     returns.index.name = None
 
     return returns
+
+
+# Calculate the romad (return/cagr over max drawdown) of a strategy
+def romad(returns, periods=365, annualize=True, smart=False):
+    """
+    Calculates the romad (return/cagr over max drawdown) of a strategy
+    Args:
+        * returns (Series, DataFrame): Input return series
+        * periods (int): Freq. of returns
+        * annualize: return annualize sharpe?
+        * smart: return smart sharpe ratio
+    """
+    return cagr(returns, periods=periods) / -max_drawdown(returns)
