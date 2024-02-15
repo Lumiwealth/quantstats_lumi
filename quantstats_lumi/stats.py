@@ -959,6 +959,15 @@ def r_squared(returns, benchmark, prepare_returns=True):
     """Measures the straight line fit of the equity curve"""
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
+
+    # Check if all returns index x values are identical to prevent the error ValueError: Cannot calculate a linear regression if all x values are identical
+    if len(_np.unique(_np.array(returns.index))) == 1:
+        return 0
+
+    # Check if all benchmark values are identical
+    if len(_np.unique(_np.array(benchmark))) == 1:
+        return 0
+
     _, _, r_val, _, _ = _linregress(
         returns, _utils._prepare_benchmark(benchmark, returns.index)
     )
