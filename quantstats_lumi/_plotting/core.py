@@ -29,19 +29,11 @@ import matplotlib.dates as _mdates
 import numpy as _np
 import pandas as _pd
 import seaborn as _sns
-from matplotlib.ticker import (
-    FormatStrFormatter as _FormatStrFormatter,
-)
-from matplotlib.ticker import (
-    FuncFormatter as _FuncFormatter,
-)
+from matplotlib.ticker import FormatStrFormatter as _FormatStrFormatter
+from matplotlib.ticker import FuncFormatter as _FuncFormatter
 
-from .. import (
-    stats as _stats,
-)
-from .. import (
-    utils as _utils,
-)
+from .. import stats as _stats
+from .. import utils as _utils
 
 _sns.set(
     font_scale=1.1,
@@ -103,7 +95,7 @@ def plot_returns_bars(
     hlw=None,
     hlcolor="red",
     hllabel="",
-    resample="A",
+    resample="YE",
     title="Returns",
     match_volatility=False,
     log_scale=False,
@@ -407,7 +399,7 @@ def plot_timeseries(
 def plot_histogram(
     returns,
     benchmark,
-    resample="M",
+    resample="ME",
     bins=20,
     fontname="Arial",
     grayscale=False,
@@ -564,18 +556,9 @@ def plot_histogram(
     # ax.axvline(0, lw=1, color="#000000", zorder=2)
 
     ax.set_xlabel("")
-
-    if ylabel:
-        ax.set_ylabel(
-            "Occurrences",
-            fontname=fontname,
-            fontweight="bold",
-            fontsize=12,
-            color="black"
-        )
-    else:
-        ax.set_ylabel(None)
-
+    ax.set_ylabel(
+        "Occurrences", fontname=fontname, fontweight="bold", fontsize=12, color="black"
+    )
     ax.yaxis.set_label_coords(-0.1, 0.5)
 
     # fig.autofmt_xdate()
@@ -1018,16 +1001,16 @@ def plot_distribution(
     apply_fnc = _stats.comp if compounded else _np.sum
 
     port["Weekly"] = port["Daily"].resample("W-MON").apply(apply_fnc)
-    port["Weekly"].ffill(inplace=True)
+    port["Weekly"] = port["Weekly"].ffill()
 
-    port["Monthly"] = port["Daily"].resample("M").apply(apply_fnc)
-    port["Monthly"].ffill(inplace=True)
+    port["Monthly"] = port["Daily"].resample("ME").apply(apply_fnc)
+    port["Monthly"] = port["Monthly"].ffill()
 
-    port["Quarterly"] = port["Daily"].resample("Q").apply(apply_fnc)
-    port["Quarterly"].ffill(inplace=True)
+    port["Quarterly"] = port["Daily"].resample("QE").apply(apply_fnc)
+    port["Quarterly"] = port["Quarterly"].ffill()
 
-    port["Yearly"] = port["Daily"].resample("A").apply(apply_fnc)
-    port["Yearly"].ffill(inplace=True)
+    port["Yearly"] = port["Daily"].resample("YE").apply(apply_fnc)
+    port["Yearly"] = port["Yearly"].ffill()
 
     fig, ax = _plt.subplots(figsize=figsize)
     ax.spines["top"].set_visible(False)
@@ -1207,7 +1190,7 @@ def format_cur_axis(x, _):
         return res.replace(".0B", "B")
     if x >= 1e6:
         res = "$%1.1fM" % (x * 1e-6)
-        return res.replace(".0M", "M")
+        return res.replace(".0M", "ME")
     if x >= 1e3:
         res = "$%1.0fK" % (x * 1e-3)
         return res.replace(".0K", "K")

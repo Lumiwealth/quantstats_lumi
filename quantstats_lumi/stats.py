@@ -88,9 +88,9 @@ def distribution(returns, compounded=True, prepare_returns=True):
     return {
         "Daily": get_outliers(daily),
         "Weekly": get_outliers(daily.resample("W-MON").apply(apply_fnc)),
-        "Monthly": get_outliers(daily.resample("M").apply(apply_fnc)),
+        "Monthly": get_outliers(daily.resample("ME").apply(apply_fnc)),
         "Quarterly": get_outliers(daily.resample("Q").apply(apply_fnc)),
-        "Yearly": get_outliers(daily.resample("A").apply(apply_fnc)),
+        "Yearly": get_outliers(daily.resample("YE").apply(apply_fnc)),
     }
 
 
@@ -102,7 +102,7 @@ def expected_return(returns, aggregate=None, compounded=True, prepare_returns=Tr
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
     returns = _utils.aggregate_returns(returns, aggregate, compounded)
-    return _np.product(1 + returns, axis=0) ** (1 / len(returns)) - 1
+    return _np.product(1 + returns) ** (1 / len(returns)) - 1
 
 
 def geometric_mean(retruns, aggregate=None, compounded=True):

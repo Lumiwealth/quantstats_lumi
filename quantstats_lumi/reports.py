@@ -169,7 +169,7 @@ def html(
 
     if benchmark is not None:
         yoy = _stats.compare(
-            returns, benchmark, "A", compounded=compounded, prepare_returns=False
+            returns, benchmark, "YE", compounded=compounded, prepare_returns=False
         )
         if isinstance(returns, _pd.Series):
             yoy.columns = [benchmark_title, strategy_title, "Multiplier", "Won"]
@@ -223,7 +223,7 @@ def html(
             )
         tpl = tpl.replace("{{dd_info}}", dd_html_table)
 
-    active = kwargs.get("active_returns", False)
+    active = kwargs.get("active_returns", "False")
     # plots
     figfile = _utils._file_stream()
     _plots.returns(
@@ -530,7 +530,7 @@ def full(
     if benchmark is not None:
         benchmark_title = kwargs.get("benchmark_title", "Benchmark")
     strategy_title = kwargs.get("strategy_title", "Strategy")
-    active = kwargs.get("active_returns", False)
+    active = kwargs.get("active_returns", "False")
 
     if (
         isinstance(returns, _pd.DataFrame)
@@ -684,7 +684,7 @@ def basic(
     if benchmark is not None:
         benchmark_title = kwargs.get("benchmark_title", "Benchmark")
     strategy_title = kwargs.get("strategy_title", "Strategy")
-    active = kwargs.get("active_returns", False)
+    active = kwargs.get("active_returns", "False")
 
     if (
         isinstance(returns, _pd.DataFrame)
@@ -948,13 +948,13 @@ def metrics(
         )
         metrics["Expected Monthly %%"] = (
             _stats.expected_return(
-                df, compounded=compounded, aggregate="M", prepare_returns=False
+                df, compounded=compounded, aggregate="ME", prepare_returns=False
             )
             * pct
         )
         metrics["Expected Yearly %%"] = (
             _stats.expected_return(
-                df, compounded=compounded, aggregate="A", prepare_returns=False
+                df, compounded=compounded, aggregate="YE", prepare_returns=False
             )
             * pct
         )
@@ -977,7 +977,7 @@ def metrics(
         metrics["Max Consecutive Losses *int"] = _stats.consecutive_losses(df)
 
     metrics["Gain/Pain Ratio"] = _stats.gain_to_pain_ratio(df, rf)
-    metrics["Gain/Pain (1M)"] = _stats.gain_to_pain_ratio(df, rf, "M")
+    metrics["Gain/Pain (1M)"] = _stats.gain_to_pain_ratio(df, rf, "ME")
     metrics["~~~~~~~"] = blank
 
     metrics["Payoff Ratio"] = _stats.payoff_ratio(df, prepare_returns=False)
@@ -1031,19 +1031,23 @@ def metrics(
         )
         metrics["Worst Day %"] = _stats.worst(df, prepare_returns=False) * pct
         metrics["Best Month %"] = (
-            _stats.best(df, compounded=compounded, aggregate="M", prepare_returns=False)
+            _stats.best(
+                df, compounded=compounded, aggregate="ME", prepare_returns=False
+            )
             * pct
         )
         metrics["Worst Month %"] = (
-            _stats.worst(df, aggregate="M", prepare_returns=False) * pct
+            _stats.worst(df, aggregate="ME", prepare_returns=False) * pct
         )
         metrics["Best Year %"] = (
-            _stats.best(df, compounded=compounded, aggregate="A", prepare_returns=False)
+            _stats.best(
+                df, compounded=compounded, aggregate="YE", prepare_returns=False
+            )
             * pct
         )
         metrics["Worst Year %"] = (
             _stats.worst(
-                df, compounded=compounded, aggregate="A", prepare_returns=False
+                df, compounded=compounded, aggregate="YE", prepare_returns=False
             )
             * pct
         )
@@ -1061,20 +1065,20 @@ def metrics(
         metrics["~~~~~"] = blank
         metrics["Avg. Up Month %"] = (
             _stats.avg_win(
-                df, compounded=compounded, aggregate="M", prepare_returns=False
+                df, compounded=compounded, aggregate="ME", prepare_returns=False
             )
             * pct
         )
         metrics["Avg. Down Month %"] = (
             _stats.avg_loss(
-                df, compounded=compounded, aggregate="M", prepare_returns=False
+                df, compounded=compounded, aggregate="ME", prepare_returns=False
             )
             * pct
         )
         metrics["Win Days %%"] = _stats.win_rate(df, prepare_returns=False) * pct
         metrics["Win Month %%"] = (
             _stats.win_rate(
-                df, compounded=compounded, aggregate="M", prepare_returns=False
+                df, compounded=compounded, aggregate="ME", prepare_returns=False
             )
             * pct
         )
@@ -1086,7 +1090,7 @@ def metrics(
         )
         metrics["Win Year %%"] = (
             _stats.win_rate(
-                df, compounded=compounded, aggregate="A", prepare_returns=False
+                df, compounded=compounded, aggregate="YE", prepare_returns=False
             )
             * pct
         )
