@@ -736,6 +736,53 @@ def drawdowns_periods(
         return fig
 
 
+def rolling_return(
+    returns,
+    benchmark=None,
+    rf=0.0,
+    period=252,
+    period_label="1-Year",
+    lw=1.25,
+    fontname="Arial",
+    grayscale=False,
+    figsize=(10, 3),
+    ylabel="Rolling return",
+    subtitle=True,
+    savefig=None,
+    show=True,
+):
+    returns = _stats.rolling_return(
+        returns,
+        period,
+        prepare_returns=False,
+    )
+
+    if benchmark is not None:
+        benchmark = _utils._prepare_benchmark(benchmark, returns.index, rf)
+        benchmark = _stats.rolling_return(
+            benchmark, period, prepare_returns=False
+        )
+
+    fig = _core.plot_rolling_stats(
+        returns,
+        benchmark,
+        hline=returns.mean(),
+        hlw=1.5,
+        ylabel=ylabel,
+        title="Rolling Return (%s)" % period_label,
+        fontname=fontname,
+        grayscale=grayscale,
+        lw=lw,
+        figsize=figsize,
+        subtitle=subtitle,
+        savefig=savefig,
+        show=show,
+        percent=True
+    )
+    if not show:
+        return fig
+
+
 def rolling_beta(
     returns,
     benchmark,

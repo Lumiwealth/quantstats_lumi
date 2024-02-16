@@ -41,6 +41,7 @@ def extend_pandas():
     _po.compsum = stats.compsum
     _po.comp = stats.comp
     _po.expected_return = stats.expected_return
+    _po.rolling_return = stats.rolling_return
     _po.geometric_mean = stats.geometric_mean
     _po.ghpr = stats.ghpr
     _po.outliers = stats.outliers
@@ -140,6 +141,7 @@ def extend_pandas():
     _po.plot_histogram = plots.histogram
     _po.plot_log_returns = plots.log_returns
     _po.plot_returns = plots.returns
+    _po.plot_rolling_return = plots.rolling_return
     _po.plot_rolling_beta = plots.rolling_beta
     _po.plot_rolling_sharpe = plots.rolling_sharpe
     _po.plot_rolling_sortino = plots.rolling_sortino

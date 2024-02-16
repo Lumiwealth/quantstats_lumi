@@ -462,6 +462,48 @@ def html(
         tpl = tpl.replace("{{monthly_heatmap}}", _embed_figure(embed, figfmt))
 
     figfile = _utils._file_stream()
+    
+    _plots.rolling_return(
+        returns,
+        benchmark=benchmark,
+        grayscale=grayscale,
+        figsize=(8, 5),
+        subtitle=False,
+        savefig={"fname": figfile, "format": figfmt},
+        show=False,
+        period=win_year,
+    )
+    tpl = tpl.replace("{{rolling_return_1_year}}", _embed_figure(figfile, figfmt))
+
+    figfile = _utils._file_stream()
+    _plots.rolling_return(
+        returns,
+        benchmark=benchmark,
+        grayscale=grayscale,
+        figsize=(8, 5),
+        subtitle=False,
+        savefig={"fname": figfile, "format": figfmt},
+        show=False,
+        period=win_year * 3,
+        period_label="3-Years",
+    )
+    tpl = tpl.replace("{{rolling_return_3_years}}", _embed_figure(figfile, figfmt))
+
+    figfile = _utils._file_stream()
+    _plots.rolling_return(
+        returns,
+        benchmark=benchmark,
+        grayscale=grayscale,
+        figsize=(8, 5),
+        subtitle=False,
+        savefig={"fname": figfile, "format": figfmt},
+        show=False,
+        period=win_year * 5,
+        period_label="5-Years",
+    )
+    tpl = tpl.replace("{{rolling_return_5_years}}", _embed_figure(figfile, figfmt))
+
+    figfile = _utils._file_stream()
 
     if isinstance(returns, _pd.Series):
         _plots.distribution(

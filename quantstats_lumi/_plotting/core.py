@@ -607,6 +607,7 @@ def plot_rolling_stats(
     subtitle=True,
     savefig=None,
     show=True,
+    percent=False,
 ):
     colors, _, _ = _get_colors(grayscale)
 
@@ -686,6 +687,9 @@ def plot_rolling_stats(
         ax.yaxis.set_label_coords(-0.1, 0.5)
 
     ax.yaxis.set_major_formatter(_FormatStrFormatter("%.2f"))
+
+    if percent:
+        ax.yaxis.set_major_formatter(_FuncFormatter(format_pct_axis))
 
     ax.legend(fontsize=11)
 
