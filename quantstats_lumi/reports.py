@@ -440,6 +440,20 @@ def html(
             active=active,
             eoy=True,
         )
+        _plots.monthly_heatmap(
+            benchmark,
+            benchmark=None,
+            grayscale=grayscale,
+            figsize=(8, 4),
+            cbar=False,
+            returns_label=benchmark.name,
+            savefig={"fname": figfile, "format": figfmt},
+            show=False,
+            ylabel=False,
+            compounded=compounded,
+            active=active,
+            eoy=True,
+        )
         tpl = tpl.replace("{{monthly_heatmap}}", _embed_figure(figfile, figfmt))
     elif isinstance(returns, _pd.DataFrame):
         embed = []
@@ -462,7 +476,7 @@ def html(
         tpl = tpl.replace("{{monthly_heatmap}}", _embed_figure(embed, figfmt))
 
     figfile = _utils._file_stream()
-    
+
     _plots.rolling_return(
         returns,
         benchmark=benchmark,
