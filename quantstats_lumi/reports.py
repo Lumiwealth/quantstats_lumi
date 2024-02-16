@@ -171,7 +171,7 @@ def html(
 
     if benchmark is not None:
         yoy = _stats.compare(
-            returns, benchmark, "YE", compounded=compounded, prepare_returns=False
+            returns, benchmark, "A", compounded=compounded, prepare_returns=False
         )
         if isinstance(returns, _pd.Series):
             yoy.columns = [benchmark_title, strategy_title, "Multiplier", "Won"]
