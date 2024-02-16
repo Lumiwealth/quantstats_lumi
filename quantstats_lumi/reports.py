@@ -35,6 +35,8 @@ from . import plots as _plots
 from . import stats as _stats
 from . import utils as _utils
 
+from .additional_features import AdditionalFeatures
+
 try:
     from IPython.display import HTML as iHTML
     from IPython.display import display as iDisplay
@@ -566,6 +568,9 @@ def html(
 
     tpl = _regex.sub(r"\{\{(.*?)\}\}", "", tpl)
     tpl = tpl.replace("white-space:pre;", "")
+
+    additional_features = AdditionalFeatures()
+    tpl = additional_features(tpl, **kwargs)
 
     if output is None:
         # _open_html(tpl)
