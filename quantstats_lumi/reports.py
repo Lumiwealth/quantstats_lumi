@@ -476,7 +476,6 @@ def html(
         tpl = tpl.replace("{{monthly_heatmap}}", _embed_figure(embed, figfmt))
 
     figfile = _utils._file_stream()
-
     _plots.rolling_return(
         returns,
         benchmark=benchmark,
@@ -516,6 +515,20 @@ def html(
         period_label="5-Years",
     )
     tpl = tpl.replace("{{rolling_return_5_years}}", _embed_figure(figfile, figfmt))
+
+    figfile = _utils._file_stream()
+    _plots.rolling_return(
+        returns,
+        benchmark=benchmark,
+        grayscale=grayscale,
+        figsize=(8, 5),
+        subtitle=False,
+        savefig={"fname": figfile, "format": figfmt},
+        show=False,
+        period=win_year*10,
+        period_label="10-Years",
+    )
+    tpl = tpl.replace("{{rolling_return_10_years}}", _embed_figure(figfile, figfmt))
 
     figfile = _utils._file_stream()
 
