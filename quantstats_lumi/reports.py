@@ -381,6 +381,7 @@ def html(
     if isinstance(returns, _pd.Series):
         _plots.drawdowns_periods(
             returns,
+            periods=10,
             grayscale=grayscale,
             figsize=(8, 4),
             subtitle=False,
@@ -397,6 +398,7 @@ def html(
         for col in returns.columns:
             _plots.drawdowns_periods(
                 returns[col],
+                periods=10,
                 grayscale=grayscale,
                 figsize=(8, 4),
                 subtitle=False,
@@ -436,6 +438,7 @@ def html(
             ylabel=False,
             compounded=compounded,
             active=active,
+            eoy=True,
         )
         tpl = tpl.replace("{{monthly_heatmap}}", _embed_figure(figfile, figfmt))
     elif isinstance(returns, _pd.DataFrame):
@@ -453,6 +456,7 @@ def html(
                 ylabel=False,
                 compounded=compounded,
                 active=active,
+                eoy=True,
             )
             embed.append(figfile)
         tpl = tpl.replace("{{monthly_heatmap}}", _embed_figure(embed, figfmt))
@@ -858,6 +862,7 @@ def metrics(
 
     metrics["~~~~~~~~~~~~~~"] = blank
 
+    metrics['UPI'] = _stats.ulcer_performance_index(df, rf)
     metrics["Sharpe"] = _stats.sharpe(df, rf, win_year, True)
     metrics["ROMaD"] = _stats.romad(df, win_year, True)
     metrics["Prob. Sharpe Ratio %"] = (
@@ -1308,6 +1313,7 @@ def plots(
                 ylabel=False,
                 compounded=compounded,
                 active=active,
+                eoy=True,
             )
         elif isinstance(returns, _pd.DataFrame):
             for col in returns.columns:
@@ -1321,6 +1327,7 @@ def plots(
                     returns_label=col,
                     compounded=compounded,
                     active=active,
+                    eoy=True,
                 )
 
         return
@@ -1448,6 +1455,7 @@ def plots(
     if isinstance(returns, _pd.Series):
         _plots.drawdowns_periods(
             returns,
+            periods=10,
             grayscale=grayscale,
             figsize=(figsize[0], figsize[0] * 0.5),
             show=True,
@@ -1458,6 +1466,7 @@ def plots(
         for col in returns.columns:
             _plots.drawdowns_periods(
                 returns[col],
+                periods=10,
                 grayscale=grayscale,
                 figsize=(figsize[0], figsize[0] * 0.5),
                 show=True,
@@ -1484,6 +1493,7 @@ def plots(
             show=True,
             ylabel=False,
             active=active,
+            eoy=True,
         )
     elif isinstance(returns, _pd.DataFrame):
         for col in returns.columns:
@@ -1497,6 +1507,7 @@ def plots(
                 returns_label=col,
                 compounded=compounded,
                 active=active,
+                eoy=True,
             )
 
     if isinstance(returns, _pd.Series):
