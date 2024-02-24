@@ -133,7 +133,7 @@ def aggregate_returns(returns, period=None, compounded=True):
     if "quarter" in period:
         return group_returns(returns, index.quarter, compounded=compounded)
 
-    if period == "A" or any(x in period for x in ["year", "eoy", "yoy"]):
+    if period == "YE" or any(x in period for x in ["year", "eoy", "yoy"]):
         return group_returns(returns, index.year, compounded=compounded)
 
     if "week" in period:
@@ -142,10 +142,10 @@ def aggregate_returns(returns, period=None, compounded=True):
     if "eow" in period or period == "W":
         return group_returns(returns, [index.year, index.week], compounded=compounded)
 
-    if "eom" in period or period == "M":
+    if "eom" in period or period == "ME":
         return group_returns(returns, [index.year, index.month], compounded=compounded)
 
-    if "eoq" in period or period == "Q":
+    if "eoq" in period or period == "QE":
         return group_returns(
             returns, [index.year, index.quarter], compounded=compounded
         )
