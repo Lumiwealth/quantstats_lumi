@@ -1085,7 +1085,7 @@ def metrics(
         )
         metrics["Win Quarter %%"] = (
             _stats.win_rate(
-                df, compounded=compounded, aggregate="Q", prepare_returns=False
+                df, compounded=compounded, aggregate="QE", prepare_returns=False
             )
             * pct
         )
