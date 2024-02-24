@@ -505,7 +505,12 @@ def plot_histogram(
         if isinstance(returns, _pd.Series):
             combined_returns = returns.copy()
             if kde:
-                _sns.kdeplot(data=combined_returns, color="black", ax=ax)
+                _sns.kdeplot(
+                    data=combined_returns,
+                    color="black",
+                    ax=ax,
+                    warn_singular=False,
+                )
             x = _sns.histplot(
                 data=combined_returns,
                 bins=bins,
@@ -522,7 +527,7 @@ def plot_histogram(
                 .reset_index()
                 .rename(columns={"level_1": "", 0: "Returns"})
             )
-            # _sns.kdeplot(data=combined_returns, color='black', ax=ax)
+            # _sns.kdeplot(data=combined_returns, color='black', ax=ax, warn_singular=False)
             x = _sns.histplot(
                 data=combined_returns,
                 x="Returns",
