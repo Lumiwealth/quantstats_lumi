@@ -850,11 +850,11 @@ def metrics(
     metrics["~"] = blank
 
     if compounded:
-        metrics["Cumulative Return %"] = (_stats.comp(df) * pct).map("{:,.2f}".format)
+        metrics["Total Return %"] = (_stats.comp(df) * pct).map("{:,.2f}".format)
     else:
         metrics["Total Return %"] = (df.sum() * pct).map("{:,.2f}".format)
 
-    metrics["CAGR﹪%"] = _stats.cagr(df, rf, compounded, win_year) * pct
+    metrics["CAGR﹪% (Annual Return)"] = _stats.cagr(df, rf, compounded, win_year) * pct
 
     metrics["~~~~~~~~~~~~~~"] = blank
 
