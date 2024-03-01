@@ -951,6 +951,13 @@ def kelly_criterion(returns, prepare_returns=True):
 
     return ((win_loss_ratio * win_prob) - lose_prob) / win_loss_ratio
 
+# Calculate the correlation to the benchmark
+def benchmark_correlation(returns, benchmark, prepare_returns=True):
+    """Calculates the correlation to the benchmark"""
+    if prepare_returns:
+        returns = _utils._prepare_returns(returns)
+    return returns.corrwith(_utils._prepare_benchmark(benchmark, returns.index))
+
 
 # ==== VS. BENCHMARK ====
 

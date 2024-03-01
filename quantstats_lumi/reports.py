@@ -860,6 +860,8 @@ def metrics(
 
     metrics["Sharpe"] = _stats.sharpe(df, rf, win_year, True)
     metrics["ROMaD"] = _stats.romad(df, win_year, True)
+    # def benchmark_correlation(returns, benchmark, prepare_returns=True)
+    metrics["Corr to Benchmark"] = _stats.benchmark_correlation(df, benchmark, True)
     metrics["Prob. Sharpe Ratio %"] = (
         _stats.probabilistic_sharpe_ratio(df, rf, win_year, False) * pct
     )
