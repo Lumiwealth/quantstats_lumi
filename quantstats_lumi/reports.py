@@ -993,7 +993,7 @@ def metrics(
 
     # returns
     metrics["~~"] = blank
-    comp_func = _stats.comp if compounded else _np.sum
+    comp_func = _stats.comp if compounded else lambda x: _np.sum(x, axis=0)
 
     today = df.index[-1]  # _dt.today()
     metrics["MTD %"] = comp_func(df[df.index >= _dt(today.year, today.month, 1)]) * pct
