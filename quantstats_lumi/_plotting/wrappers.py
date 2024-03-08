@@ -26,7 +26,6 @@ import pandas as _pd
 import seaborn as _sns
 from matplotlib.ticker import FuncFormatter as _FuncFormatter
 from matplotlib.ticker import StrMethodFormatter as _StrMethodFormatter
-from pandas import DataFrame as _df
 
 from .. import stats as _stats
 from .. import utils as _utils
@@ -552,7 +551,7 @@ def yearly_returns(
     if compounded:
         returns = returns.resample("YE").apply(_stats.comp)
     else:
-        returns = returns.resample("YE").apply(_df.sum)
+        returns = returns.resample("YE").sum()
     returns = returns.resample("YE").last()
 
     fig = _core.plot_returns_bars(
