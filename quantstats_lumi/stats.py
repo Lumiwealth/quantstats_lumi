@@ -79,7 +79,7 @@ def distribution(returns, compounded=True, prepare_returns=True):
         else:
             returns = returns[returns.columns[0]]
 
-    apply_fnc = comp if compounded else _np.sum
+    apply_fnc = comp if compounded else 'sum'
     daily = returns.dropna()
 
     if prepare_returns:
@@ -594,7 +594,7 @@ def cagr(returns, rf=0.0, compounded=True, periods=365):
     if compounded:
         total = comp(total)
     else:
-        total = _np.sum(total)
+        total = _np.sum(total, axis=0)
 
     years = (returns.index[-1] - returns.index[0]).days / periods
 

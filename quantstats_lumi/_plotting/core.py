@@ -418,7 +418,7 @@ def plot_histogram(
 
     colors, _, _ = _get_colors(grayscale)
 
-    apply_fnc = _stats.comp if compounded else _np.sum
+    apply_fnc = _stats.comp if compounded else 'sum'
     if benchmark is not None:
         benchmark = (
             benchmark.fillna(0)
@@ -1003,7 +1003,7 @@ def plot_distribution(
     port = _pd.DataFrame(returns.fillna(0))
     port.columns = ["Daily"]
 
-    apply_fnc = _stats.comp if compounded else _np.sum
+    apply_fnc = _stats.comp if compounded else 'sum'
 
     port["Weekly"] = port["Daily"].resample("W-MON").apply(apply_fnc)
     port["Weekly"] = port["Weekly"].ffill()
