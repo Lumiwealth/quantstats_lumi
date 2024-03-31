@@ -15,3 +15,5 @@ Icon
 .vscode
 Icon
 QuantStats_Lumi.egg-info/*
+test_tearsheet.html
+test_tearsheet_parameters.html
