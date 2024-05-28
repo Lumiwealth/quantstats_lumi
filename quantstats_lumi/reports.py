@@ -188,6 +188,41 @@ def html(
 
     mtrx.index.name = "Metric"
     tpl = tpl.replace("{{metrics}}", _html_table(mtrx))
+
+    # Add all of the summary metrics
+    
+    # CAGR #
+    # Get the value of the "Strategy" column where the "Metric" column is "CAGR% (Annual Return)"
+    cagr = mtrx.loc["CAGR% (Annual Return)", strategy_title]
+    # Add the CAGR to the template
+    tpl = tpl.replace("{{cagr}}", cagr)
+
+    # Total Return #
+    # Get the value of the "Strategy" column where the "Metric" column is "Total Return"
+    total_return = mtrx.loc["Total Return", strategy_title]
+    # Add the total return to the template
+    tpl = tpl.replace("{{total_return}}", total_return)
+
+
+    # Max Drawdown #
+    # Get the value of the "Strategy" column where the "Mteric" column is "Max Drawdown"
+    max_drawdown = mtrx.loc["Max Drawdown", strategy_title]
+    # Add the max drawdown to the template
+    tpl = tpl.replace("{{max_drawdown}}", max_drawdown)
+    
+    # RoMaD #
+    # Get the value of the "Strategy" column where the "Mteric" column is "RoMaD"
+    romad = mtrx.loc["RoMaD", strategy_title]
+    # Add the RoMaD to the template
+    tpl = tpl.replace("{{romad}}", romad)
+
+    # Longest Drawdown Duration #
+    # Get the value of the "Strategy" column where the "Mteric" column is "Longest Drawdown Duration"
+    longest_dd_days = mtrx.loc["Longest DD Days", strategy_title]
+    # Add the longest drawdown duration to the template
+    tpl = tpl.replace("{{longest_dd_days}}", longest_dd_days)
+
+
     if isinstance(returns, _pd.DataFrame):
         num_cols = len(returns.columns)
         for i in reversed(range(num_cols + 1, num_cols + 3)):
@@ -915,16 +950,16 @@ def metrics(
     metrics["~"] = blank
 
     if compounded:
-        metrics["Total Return % "] = (_stats.comp(df) * pct).map("{:,.2f}".format)
+        metrics["Total Return"] = (_stats.comp(df) * pct).map("{:,.2f}%".format)
     else:
-        metrics["Total Return % "] = (df.sum() * pct).map("{:,.2f}".format)
+        metrics["Total Return"] = (df.sum() * pct).map("{:,.2f}%".format)
 
     metrics["CAGR% (Annual Return) "] = _stats.cagr(df, rf, compounded, win_year) * pct
 
     metrics["~~~~~~~~~~~~~~"] = blank
 
     metrics["Sharpe"] = _stats.sharpe(df, rf, win_year, True)
-    metrics["ROMaD"] = _stats.romad(df, win_year, True)
+    metrics["RoMaD"] = _stats.romad(df, win_year, True)
     
     if benchmark is not None:
         metrics["Corr to Benchmark "] = _stats.benchmark_correlation(df, benchmark, True)
@@ -1027,10 +1062,6 @@ def metrics(
             )
             * pct
         )
-        metrics["Kelly Criterion %"] = (
-            _stats.kelly_criterion(df, prepare_returns=False) * pct
-        )
-        metrics["Risk of Ruin %"] = _stats.risk_of_ruin(df, prepare_returns=False)
 
         metrics["Daily Value-at-Risk %"] = -abs(
             _stats.var(df, prepare_returns=False) * pct
@@ -1038,24 +1069,6 @@ def metrics(
         metrics["Expected Shortfall (cVaR) %"] = -abs(
             _stats.cvar(df, prepare_returns=False) * pct
         )
-
-    metrics["~~~~~~"] = blank
-
-    if mode.lower() == "full":
-        metrics["Max Consecutive Wins *int"] = _stats.consecutive_wins(df)
-        metrics["Max Consecutive Losses *int"] = _stats.consecutive_losses(df)
-
-    metrics["Gain/Pain Ratio"] = _stats.gain_to_pain_ratio(df, rf)
-    metrics["Gain/Pain (1M)"] = _stats.gain_to_pain_ratio(df, rf, "ME")
-    metrics["~~~~~~~"] = blank
-
-    metrics["Payoff Ratio"] = _stats.payoff_ratio(df, prepare_returns=False)
-    metrics["Profit Factor"] = _stats.profit_factor(df, prepare_returns=False)
-    metrics["Common Sense Ratio"] = _stats.common_sense_ratio(df, prepare_returns=False)
-    metrics["CPC Index"] = _stats.cpc_index(df, prepare_returns=False)
-    metrics["Tail Ratio"] = _stats.tail_ratio(df, prepare_returns=False)
-    metrics["Outlier Win Ratio"] = _stats.outlier_win_ratio(df, prepare_returns=False)
-    metrics["Outlier Loss Ratio"] = _stats.outlier_loss_ratio(df, prepare_returns=False)
 
     # returns
     metrics["~~"] = blank
