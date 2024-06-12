@@ -589,6 +589,7 @@ def distribution(
     show=True,
     title=None,
     prepare_returns=True,
+    log_scale=True,
 ):
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
@@ -604,6 +605,7 @@ def distribution(
         compounded=compounded,
         savefig=savefig,
         show=show,
+        log_scale=log_scale,
     )
     if not show:
         return fig

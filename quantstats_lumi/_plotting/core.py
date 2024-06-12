@@ -354,6 +354,14 @@ def plot_timeseries(
 
     _plt.yscale("symlog" if log_scale else "linear")
 
+    # Set y-axis limits to avoid blank space at the bottom and top
+    min_val = returns.min()
+    max_val = returns.max()
+    if benchmark is not None:
+        min_val = min(min_val, benchmark.min())
+        max_val = max(max_val, benchmark.max())
+    ax.set_ylim(bottom=min_val, top=max_val)
+
     if percent:
         ax.yaxis.set_major_formatter(_FuncFormatter(format_pct_axis))
         # ax.yaxis.set_major_formatter(_plt.FuncFormatter(
@@ -940,6 +948,10 @@ def plot_longest_drawdowns(
 
     ax.axhline(0, ls="--", lw=1, color="#000000", zorder=2)
     _plt.yscale("symlog" if log_scale else "linear")
+
+    # Set y-axis limits to avoid blank space at the bottom and top
+    ax.set_ylim(bottom=series.min(), top=series.max())
+
     if ylabel:
         ax.set_ylabel(
             "Cumulative Returns",
@@ -994,6 +1006,7 @@ def plot_distribution(
     title=None,
     savefig=None,
     show=True,
+    log_scale=False,
 ):
     colors = _FLATUI_COLORS
     if grayscale:
@@ -1057,6 +1070,7 @@ def plot_distribution(
         },
     )
 
+    _plt.yscale("symlog" if log_scale else "linear")
     ax.yaxis.set_major_formatter(
         _plt.FuncFormatter(lambda x, loc: "{:,}%".format(int(x * 100)))
     )

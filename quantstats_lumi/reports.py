@@ -190,7 +190,7 @@ def html(
     tpl = tpl.replace("{{metrics}}", _html_table(mtrx))
 
     # Add all of the summary metrics
-    
+
     # CAGR #
     # Get the value of the "Strategy" column where the "Metric" column is "CAGR% (Annual Return)"
     cagr = mtrx.loc["CAGR% (Annual Return)", strategy_title]
@@ -209,7 +209,7 @@ def html(
     max_drawdown = mtrx.loc["Max Drawdown", strategy_title]
     # Add the max drawdown to the template
     tpl = tpl.replace("{{max_drawdown}}", max_drawdown)
-    
+
     # RoMaD #
     # Get the value of the "Strategy" column where the "Mteric" column is "RoMaD"
     romad = mtrx.loc["RoMaD", strategy_title]
@@ -331,7 +331,7 @@ def html(
 
     if benchmark is not None:
         figfile = _utils._file_stream()
-        _plots.returns(
+        _plots.log_returns(
             returns,
             benchmark,
             match_volatility=True,
@@ -464,6 +464,7 @@ def html(
             ylabel=False,
             compounded=compounded,
             prepare_returns=False,
+            log_scale=True,
         )
         tpl = tpl.replace("{{dd_periods}}", _embed_figure(figfile, figfmt))
     elif isinstance(returns, _pd.DataFrame):
@@ -831,7 +832,7 @@ def parameters_section(parameters):
         # Make sure that the value is something that can be displayed
         if not isinstance(value, (int, float, str)):
             value = str(value)
-            
+
         tpl += f"<tr><td>{key}</td><td>{value}</td></tr>"
     tpl += """
         </table>
@@ -960,7 +961,7 @@ def metrics(
 
     metrics["Sharpe"] = _stats.sharpe(df, rf, win_year, True)
     metrics["RoMaD"] = _stats.romad(df, win_year, True)
-    
+
     if benchmark is not None:
         metrics["Corr to Benchmark "] = _stats.benchmark_correlation(df, benchmark, True)
     metrics["Prob. Sharpe Ratio %"] = (
