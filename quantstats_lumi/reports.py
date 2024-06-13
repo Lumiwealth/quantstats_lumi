@@ -197,11 +197,11 @@ def html(
     # Add the CAGR to the template
     tpl = tpl.replace("{{cagr}}", cagr)
 
-    # Total Return #
-    # Get the value of the "Strategy" column where the "Metric" column is "Total Return"
-    total_return = mtrx.loc["Total Return", strategy_title]
-    # Add the total return to the template
-    tpl = tpl.replace("{{total_return}}", total_return)
+    # Sharpe #
+    # Get the value of the "Strategy" column where the "Metric" column is "Sharpe"
+    sharpe = mtrx.loc["Sharpe", strategy_title]
+    # Add the Sharpe to the template
+    tpl = tpl.replace("{{sharpe}}", sharpe)
 
 
     # Max Drawdown #
