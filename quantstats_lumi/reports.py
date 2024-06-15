@@ -222,6 +222,18 @@ def html(
     # Add the longest drawdown duration to the template
     tpl = tpl.replace("{{longest_dd_days}}", longest_dd_days)
 
+    # Sharpe #
+    # Get the value of the "Strategy" column where the "Metric" column is "Sharpe"
+    sharpe = mtrx.loc["Sharpe", strategy_title]
+    # Add the Sharpe to the template
+    tpl = tpl.replace("{{sharpe}}", sharpe)
+
+    # Sortino #
+    # Get the value of the "Strategy" column where the "Metric" column is "Sortino"
+    sortino = mtrx.loc["Sortino", strategy_title]
+    # Add the Sharpe to the template
+    tpl = tpl.replace("{{sortino}}", sortino)
+
 
     if isinstance(returns, _pd.DataFrame):
         num_cols = len(returns.columns)
@@ -951,7 +963,7 @@ def metrics(
     metrics["~"] = blank
 
     if compounded:
-        metrics["Total Return"] = (_stats.comp(df) * pct).map("{:,.2f}%".format)
+        metrics["Total Return"] = (_stats.comp(df) * pct).map("{:,.0f}%".format)  # No decimals for readability as it is a large number
     else:
         metrics["Total Return"] = (df.sum() * pct).map("{:,.2f}%".format)
 

@@ -245,9 +245,11 @@
         .metric-sub-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+            row-gap: 10px;
+            column-gap: 20px;
             justify-items: center;
-            margin: 20px 0;
+            margin-top: 0px;
+            margin-bottom: 20px;
         }
         .metric-sub {
             text-align: center;
@@ -12783,6 +12785,14 @@ z
                 <div class="metric-sub">
                     <div class="metric-title">Longest DD Days <span class="info-icon" title="Longest drawdown days is the longest period the portfolio stayed below its peak value.">&#9432;</span></div>
                     <h2>1</h2>
+                </div>
+                <div class="metric-sub">
+                    <div class="metric-title">Sharpe <span class="info-icon" title="Sharpe ratio measures risk-adjusted return by comparing its excess return to its volatility.">&#9432;</span></div>
+                    <h2>7.05</h2>
+                </div>
+                <div class="metric-sub">
+                    <div class="metric-title">Sortino <span class="info-icon" title="Sortino ratio measures risk-adjusted return by comparing its excess return to its downside volatility.">&#9432;</span></div>
+                    <h2>15.28</h2>
                 </div>
             </div>
 
