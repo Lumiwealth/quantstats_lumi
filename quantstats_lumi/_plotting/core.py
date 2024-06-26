@@ -1200,6 +1200,97 @@ def plot_table(
     return None
 
 
+def monthly_heatmap_detailedview(
+    returns,
+    benchmark=None,
+    grayscale=False,
+    figsize=(14, 6),
+    annot_size=10,
+    returns_label="Strategy",
+    fontname="Arial",
+    savefig=None,
+    show=True,
+):
+    daily_returns = returns.pct_change().fillna(0)
+    monthly_returns = daily_returns.resample('M').apply(lambda x: (x + 1).prod() - 1) * 100
+    monthly_drawdowns = daily_returns.resample('M').apply(calculate_monthly_drawdowns) * 100
+
+    monthly_combined = _pd.DataFrame({
+        "Returns": monthly_returns,
+        "Drawdowns": monthly_drawdowns
+    })
+
+    monthly_combined["Year"] = monthly_combined.index.year
+    monthly_combined["Month"] = monthly_combined.index.month
+
+    pivot_returns = monthly_combined.pivot(index="Year", columns="Month", values="Returns")
+    pivot_drawdowns = monthly_combined.pivot(index="Year", columns="Month", values="Drawdowns")
+
+    cmap = "gray" if grayscale else "RdYlGn"
+
+    fig, ax = _plt.subplots(figsize=figsize)
+    ax.set_facecolor("white")
+    fig.set_facecolor("white")
+
+    annot = pivot_returns.applymap("{:.2f}%".format) + "\n" + pivot_drawdowns.applymap("({:.2f}%)".format)
+
+    _sns.heatmap(
+        pivot_returns,
+        annot=annot,
+        center=0,
+        annot_kws={"size": annot_size, "ha": 'center', "va": 'center'},
+        fmt="s",
+        linewidths=0.5,
+        cmap=cmap,
+        cbar_kws={"format": "%.0f%%"},
+        ax=ax
+    )
+
+    annual_returns = pivot_returns.sum(axis=1)
+    annual_mdds = pivot_drawdowns.min(axis=1)
+    ytick_labels = [f"{year}\nReturn: {annual_returns[year]:.2f}%\nMDD: {annual_mdds[year]:.2f}%" for year in pivot_returns.index]
+    ax.set_yticklabels(ytick_labels, rotation=0, fontsize=annot_size)
+
+    ax.set_title(
+        f"{returns_label} - Monthly Returns (%) & Drawdowns",
+        fontsize=14,
+        fontname=fontname,
+        fontweight="bold"
+    )
+
+    _plt.xticks(ticks=_np.arange(0.5, 12.5, 1), labels=list(range(1, 13)), rotation=0, fontsize=annot_size)
+
+    ax.tick_params(colors="#808080")
+    _plt.xticks(rotation=0, fontsize=annot_size * 1.2)
+    _plt.yticks(rotation=0, fontsize=annot_size * 1.2)
+
+    _plt.tight_layout(pad=1)
+    _plt.subplots_adjust(right=1.05)
+
+    if savefig:
+        if isinstance(savefig, dict):
+            _plt.savefig(**savefig)
+        else:
+            _plt.savefig(savefig)
+
+    if show:
+        _plt.show(block=False)
+
+    _plt.close()
+
+    if not show:
+        return fig
+
+    return None
+
+
+def calculate_monthly_drawdowns(returns):
+    cum_returns = (returns + 1).cumprod()
+    cum_max = cum_returns.cummax()
+    drawdowns = (cum_returns - cum_max) / cum_max
+    return drawdowns.min()
+
+
 def format_cur_axis(x, _):
     if x >= 1e12:
         res = "$%1.1fT" % (x * 1e-12)
