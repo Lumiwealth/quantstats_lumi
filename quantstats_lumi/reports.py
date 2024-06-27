@@ -75,6 +75,8 @@ def html(
     template_path: str = None,
     match_dates: bool = True,
     parameters: dict = None,
+    log_scale: bool = False,
+    show_match_volatility: bool = True,
     **kwargs,
 ):
     """
@@ -311,8 +313,11 @@ def html(
 
     active = kwargs.get("active_returns", False)
     # plots
+    plot_returns = _plots.log_returns if log_scale else _plots.returns
+    placeholder_returns = "{{log_returns}}" if log_scale else "{{returns}}"
+
     figfile = _utils._file_stream()
-    _plots.returns(
+    plot_returns(
         returns,
         benchmark,
         grayscale=grayscale,
@@ -324,31 +329,16 @@ def html(
         cumulative=compounded,
         prepare_returns=False,
     )
-    tpl = tpl.replace("{{returns}}", _embed_figure(figfile, figfmt))
+    tpl = tpl.replace(placeholder_returns, _embed_figure(figfile, figfmt))
 
-    figfile = _utils._file_stream()
-    _plots.log_returns(
-        returns,
-        benchmark,
-        grayscale=grayscale,
-        figsize=(8, 4),
-        subtitle=False,
-        savefig={"fname": figfile, "format": figfmt},
-        show=False,
-        ylabel=False,
-        cumulative=compounded,
-        prepare_returns=False,
-    )
-    tpl = tpl.replace("{{log_returns}}", _embed_figure(figfile, figfmt))
-
-    if benchmark is not None:
+    if benchmark is not None and show_match_volatility:
         figfile = _utils._file_stream()
-        _plots.log_returns(
+        plot_returns(
             returns,
             benchmark,
             match_volatility=True,
             grayscale=grayscale,
-            figsize=(8, 4),
+            figsize=(8, 5),
             subtitle=False,
             savefig={"fname": figfile, "format": figfmt},
             show=False,
@@ -476,7 +466,7 @@ def html(
             ylabel=False,
             compounded=compounded,
             prepare_returns=False,
-            log_scale=True,
+            log_scale=log_scale,
         )
         tpl = tpl.replace("{{dd_periods}}", _embed_figure(figfile, figfmt))
     elif isinstance(returns, _pd.DataFrame):

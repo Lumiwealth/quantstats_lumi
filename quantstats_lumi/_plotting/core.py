@@ -909,7 +909,7 @@ def plot_longest_drawdowns(
     ax.spines["left"].set_visible(False)
 
     fig.suptitle(
-        f"{title} - Worst %.0f Drawdown Periods" % periods,
+        f"{title} - Worst %.0f Drawdown Periods" % periods + (" (Log Scaled)" if log_scale else ""),
         y=0.94,
         fontweight="bold",
         fontname=fontname,
