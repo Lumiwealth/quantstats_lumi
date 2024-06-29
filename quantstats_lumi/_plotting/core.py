@@ -1201,19 +1201,19 @@ def plot_table(
 
 
 def monthly_heatmap_detailedview(
-    returns,
-    benchmark=None,
-    grayscale=False,
-    figsize=(14, 6),
-    annot_size=10,
-    returns_label="Strategy",
-    fontname="Arial",
-    savefig=None,
-    show=True,
+        returns,
+        benchmark=None,
+        grayscale=False,
+        figsize=(14, 6),
+        annot_size=10,
+        returns_label="Strategy",
+        fontname="Arial",
+        savefig=None,
+        show=True,
 ):
     daily_returns = returns.pct_change().fillna(0)
-    monthly_returns = daily_returns.resample('M').apply(lambda x: (x + 1).prod() - 1) * 100
-    monthly_drawdowns = daily_returns.resample('M').apply(calculate_monthly_drawdowns) * 100
+    monthly_returns = daily_returns.resample('ME').apply(lambda x: (x + 1).prod() - 1) * 100
+    monthly_drawdowns = calculate_monthly_drawdowns(returns) * 100
 
     monthly_combined = _pd.DataFrame({
         "Returns": monthly_returns,
@@ -1232,7 +1232,7 @@ def monthly_heatmap_detailedview(
     ax.set_facecolor("white")
     fig.set_facecolor("white")
 
-    annot = pivot_returns.applymap("{:.2f}%".format) + "\n" + pivot_drawdowns.applymap("({:.2f}%)".format)
+    annot = pivot_returns.map("{:.2f}%".format) + "\n" + pivot_drawdowns.map("({:.2f}%)".format)
 
     _sns.heatmap(
         pivot_returns,
@@ -1247,22 +1247,35 @@ def monthly_heatmap_detailedview(
     )
 
     annual_returns = pivot_returns.sum(axis=1)
-    annual_mdds = pivot_drawdowns.min(axis=1)
-    ytick_labels = [f"{year}\nReturn: {annual_returns[year]:.2f}%\nMDD: {annual_mdds[year]:.2f}%" for year in pivot_returns.index]
-    ax.set_yticklabels(ytick_labels, rotation=0, fontsize=annot_size)
 
+    annually_grouped = daily_returns.groupby(daily_returns.index.year)
+    annual_dd = annually_grouped.apply(_stats.max_drawdown) * 100
+
+    ytick_labels = [f"{year}\n{annual_returns[year]:.2f}%\n({annual_dd[year]:.2f}%)" for year in pivot_returns.index]
+    ax.set_yticklabels(ytick_labels, rotation=0, fontsize=annot_size, ha='right')
+
+    ax.text(-0.6, len(pivot_returns.index), 'YTD', fontsize=annot_size,
+            verticalalignment='center', horizontalalignment='center')
+
+    # Edit Title
     ax.set_title(
-        f"{returns_label} - Monthly Returns (%) & Drawdowns",
+        f"{returns_label} - Monthly Returns & Drawdowns (%)",
         fontsize=14,
         fontname=fontname,
         fontweight="bold"
     )
 
-    _plt.xticks(ticks=_np.arange(0.5, 12.5, 1), labels=list(range(1, 13)), rotation=0, fontsize=annot_size)
+    # Set x-axis labels
+    month_abbr = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+    _plt.xticks(ticks=_np.arange(0.5, 12.5, 1), labels=month_abbr, rotation=0, fontsize=annot_size)
 
     ax.tick_params(colors="#808080")
     _plt.xticks(rotation=0, fontsize=annot_size * 1.2)
     _plt.yticks(rotation=0, fontsize=annot_size * 1.2)
+
+    # Remove Year label, Month label
+    ax.set_xlabel('')
+    ax.set_ylabel('')
 
     _plt.tight_layout(pad=1)
     _plt.subplots_adjust(right=1.05)
@@ -1285,10 +1298,22 @@ def monthly_heatmap_detailedview(
 
 
 def calculate_monthly_drawdowns(returns):
-    cum_returns = (returns + 1).cumprod()
-    cum_max = cum_returns.cummax()
-    drawdowns = (cum_returns - cum_max) / cum_max
-    return drawdowns.min()
+    drawdowns = []
+    monthly_last_date = returns.resample('ME').apply(lambda x: x.index[-1]).index.tolist()
+    monthly_last_trading_date = returns.resample('ME').apply(lambda x: x.index[-1]).tolist()
+    monthly_last_trading_date.insert(0, returns.index[0])
+
+    for index, end_date in enumerate(monthly_last_trading_date):
+        if index == 0:
+            continue
+
+        last_month_end_date = monthly_last_trading_date[index - 1]
+        current_month_returns = returns.loc[last_month_end_date:end_date]
+
+        current_dd = _stats.max_drawdown(current_month_returns)
+        drawdowns.append(current_dd)
+
+    return _pd.Series(drawdowns, index=monthly_last_date)
 
 
 def format_cur_axis(x, _):
