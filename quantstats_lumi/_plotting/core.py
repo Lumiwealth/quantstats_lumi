@@ -1200,6 +1200,153 @@ def plot_table(
     return None
 
 
+def monthly_heatmap_detailedview(
+        returns,
+        benchmark=None,
+        grayscale=False,
+        figsize=(14, 6),
+        annot_size=11,
+        returns_label="Strategy",
+        fontname="Arial",
+        savefig=None,
+        show=True,
+):
+    daily_returns = returns.pct_change().fillna(0)
+    monthly_returns = daily_returns.resample('ME').apply(lambda x: (x + 1).prod() - 1) * 100
+    monthly_drawdowns = calculate_monthly_drawdowns(returns) * 100
+
+    monthly_combined = _pd.DataFrame({
+        "Returns": monthly_returns,
+        "Drawdowns": monthly_drawdowns
+    })
+
+    monthly_combined["Year"] = monthly_combined.index.year
+    monthly_combined["Month"] = monthly_combined.index.month
+
+    pivot_returns = monthly_combined.pivot(index="Year", columns="Month", values="Returns")
+    pivot_drawdowns = monthly_combined.pivot(index="Year", columns="Month", values="Drawdowns")
+
+    cmap = "gray" if grayscale else "RdYlGn"
+
+    fig, ax = _plt.subplots(figsize=figsize)
+    ax.set_facecolor("white")
+    fig.set_facecolor("white")
+
+    annot_returns = pivot_returns.map(lambda x: f"{x:.2f}%" if _pd.notnull(x) else "")
+    annot_drawdowns = pivot_drawdowns.map(lambda x: f"({x:.2f}%)" if _pd.notnull(x) else "")
+
+    mask = pivot_returns.isnull()
+
+    _sns.heatmap(
+        pivot_returns,
+        annot=annot_returns,
+        center=0,
+        annot_kws={"size": annot_size, "ha": 'center', "va": 'bottom'},
+        fmt="s",
+        linewidths=0.5,
+        cmap=cmap,
+        cbar_kws={"format": "%.0f%%"},
+        ax=ax,
+        mask=mask
+    )
+
+    # Add Drawdowns with matched colors
+    for i in range(pivot_returns.shape[0]):
+        for j in range(pivot_returns.shape[1]):
+            cell = ax.get_children()[i * pivot_returns.shape[1] + j + 1]
+            return_color = cell.get_color()
+            monthly_dd_color = 'white' if return_color == 'w' else 'black'
+            ax.text(j + 0.5, i + 0.55, annot_drawdowns.iloc[i, j],
+                    ha='center', va='top', fontsize=annot_size * 0.8, color=monthly_dd_color)
+
+    annual_returns = pivot_returns.sum(axis=1)
+
+    annually_grouped = daily_returns.groupby(daily_returns.index.year)
+    annual_dd = annually_grouped.apply(_stats.max_drawdown) * 100
+
+    # Generate ytick_labels
+    ytick_labels = [f"{year}\n{annual_returns[year]:.2f}%" for year in pivot_returns.index]
+
+    # Remove existing y-axis labels
+    ax.set_yticks([])
+
+    # Add new y-axis labels
+    for idx, label in enumerate(ytick_labels):
+        ax.text(-0.1, idx + 0.5, label,
+                verticalalignment='center',
+                horizontalalignment='right',
+                fontsize=annot_size * 1.0,
+                transform=ax.transData)
+
+        # Add Drawdown
+        ax.text(-0.1, idx + 0.8, f"({annual_dd[pivot_returns.index[idx]]:.2f}%)",
+                verticalalignment='center',
+                horizontalalignment='right',
+                fontsize=annot_size * 0.8,  # Set Drawdown font size slightly smaller
+                transform=ax.transData,
+                color='dimgray')
+
+    # Add YTD label
+    ax.text(-0.1, len(pivot_returns.index) * 1.02, 'YTD', fontsize=annot_size,
+            verticalalignment='center', horizontalalignment='right',
+            transform=ax.transData)
+
+    ax.set_title(
+        f"{returns_label} - Monthly Returns & Drawdowns (%)",
+        fontsize=14,
+        fontname=fontname,
+        fontweight="bold"
+    )
+
+    month_abbr = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+    _plt.xticks(ticks=_np.arange(0.5, 12.5, 1), labels=month_abbr, rotation=0, fontsize=annot_size)
+
+    ax.tick_params(colors="#808080")
+    _plt.xticks(rotation=0, fontsize=annot_size * 1.2)
+    _plt.yticks(rotation=0, fontsize=annot_size * 1.2)
+
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+
+    _plt.tight_layout(pad=1)
+    _plt.subplots_adjust(right=1.05)
+
+    if savefig:
+        if isinstance(savefig, dict):
+            _plt.savefig(**savefig)
+        else:
+            _plt.savefig(savefig)
+
+    if show:
+        _plt.show(block=False)
+
+    _plt.close()
+
+    if not show:
+        return fig
+
+    return None
+
+
+def calculate_monthly_drawdowns(returns):
+    drawdowns = []
+    monthly_last_date = returns.resample('ME').apply(lambda x: x.index[-1]).index.tolist()
+    monthly_last_trading_date = returns.resample('ME').apply(lambda x: x.index[-1]).tolist()
+    monthly_last_trading_date.insert(0, returns.index[0])
+
+    for index, end_date in enumerate(monthly_last_trading_date):
+        if index == 0:
+            continue
+
+        last_month_end_date = monthly_last_trading_date[index - 1]
+        current_month_returns = returns.loc[last_month_end_date:end_date]
+
+        current_dd = _stats.max_drawdown(current_month_returns)
+        drawdowns.append(current_dd)
+
+    return _pd.Series(drawdowns, index=monthly_last_date)
+
+
 def format_cur_axis(x, _):
     if x >= 1e12:
         res = "$%1.1fT" % (x * 1e-12)

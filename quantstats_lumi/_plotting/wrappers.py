@@ -1071,3 +1071,33 @@ def monthly_returns(
         savefig=savefig,
         show=show,
     )
+
+
+def monthly_returns_detailedview(
+    returns,
+    benchmark=None,
+    grayscale=False,
+    figsize=(14, 6),
+    annot_size=10,
+    returns_label="Strategy",
+    fontname="Arial",
+    savefig=None,
+    show=True,
+    prepare_returns=True,
+):
+    if prepare_returns:
+        returns = _utils._prepare_returns(returns)
+
+    fig = _core.monthly_heatmap_detailedview(
+        returns,
+        benchmark=benchmark,
+        grayscale=grayscale,
+        figsize=figsize,
+        annot_size=annot_size,
+        returns_label=returns_label,
+        fontname=fontname,
+        savefig=savefig,
+        show=show,
+    )
+    if not show:
+        return fig
