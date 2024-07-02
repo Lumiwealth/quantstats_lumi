@@ -1205,7 +1205,7 @@ def monthly_heatmap_detailedview(
         benchmark=None,
         grayscale=False,
         figsize=(14, 6),
-        annot_size=10,
+        annot_size=11,
         returns_label="Strategy",
         fontname="Arial",
         savefig=None,
@@ -1232,32 +1232,65 @@ def monthly_heatmap_detailedview(
     ax.set_facecolor("white")
     fig.set_facecolor("white")
 
-    annot = pivot_returns.map("{:.2f}%".format) + "\n" + pivot_drawdowns.map("({:.2f}%)".format)
+    annot_returns = pivot_returns.map(lambda x: f"{x:.2f}%" if _pd.notnull(x) else "")
+    annot_drawdowns = pivot_drawdowns.map(lambda x: f"({x:.2f}%)" if _pd.notnull(x) else "")
+
+    mask = pivot_returns.isnull()
 
     _sns.heatmap(
         pivot_returns,
-        annot=annot,
+        annot=annot_returns,
         center=0,
-        annot_kws={"size": annot_size, "ha": 'center', "va": 'center'},
+        annot_kws={"size": annot_size, "ha": 'center', "va": 'bottom'},
         fmt="s",
         linewidths=0.5,
         cmap=cmap,
         cbar_kws={"format": "%.0f%%"},
-        ax=ax
+        ax=ax,
+        mask=mask
     )
+
+    # Add Drawdowns with matched colors
+    for i in range(pivot_returns.shape[0]):
+        for j in range(pivot_returns.shape[1]):
+            cell = ax.get_children()[i * pivot_returns.shape[1] + j + 1]
+            return_color = cell.get_color()
+            monthly_dd_color = 'white' if return_color == 'w' else 'black'
+            ax.text(j + 0.5, i + 0.55, annot_drawdowns.iloc[i, j],
+                    ha='center', va='top', fontsize=annot_size * 0.8, color=monthly_dd_color)
 
     annual_returns = pivot_returns.sum(axis=1)
 
     annually_grouped = daily_returns.groupby(daily_returns.index.year)
     annual_dd = annually_grouped.apply(_stats.max_drawdown) * 100
 
-    ytick_labels = [f"{year}\n{annual_returns[year]:.2f}%\n({annual_dd[year]:.2f}%)" for year in pivot_returns.index]
-    ax.set_yticklabels(ytick_labels, rotation=0, fontsize=annot_size, ha='right')
+    # Generate ytick_labels
+    ytick_labels = [f"{year}\n{annual_returns[year]:.2f}%" for year in pivot_returns.index]
 
-    ax.text(-0.6, len(pivot_returns.index), 'YTD', fontsize=annot_size,
-            verticalalignment='center', horizontalalignment='center')
+    # Remove existing y-axis labels
+    ax.set_yticks([])
 
-    # Edit Title
+    # Add new y-axis labels
+    for idx, label in enumerate(ytick_labels):
+        ax.text(-0.1, idx + 0.5, label,
+                verticalalignment='center',
+                horizontalalignment='right',
+                fontsize=annot_size * 1.0,
+                transform=ax.transData)
+
+        # Add Drawdown
+        ax.text(-0.1, idx + 0.8, f"({annual_dd[pivot_returns.index[idx]]:.2f}%)",
+                verticalalignment='center',
+                horizontalalignment='right',
+                fontsize=annot_size * 0.8,  # Set Drawdown font size slightly smaller
+                transform=ax.transData,
+                color='dimgray')
+
+    # Add YTD label
+    ax.text(-0.1, len(pivot_returns.index) * 1.02, 'YTD', fontsize=annot_size,
+            verticalalignment='center', horizontalalignment='right',
+            transform=ax.transData)
+
     ax.set_title(
         f"{returns_label} - Monthly Returns & Drawdowns (%)",
         fontsize=14,
@@ -1265,7 +1298,6 @@ def monthly_heatmap_detailedview(
         fontweight="bold"
     )
 
-    # Set x-axis labels
     month_abbr = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
     _plt.xticks(ticks=_np.arange(0.5, 12.5, 1), labels=month_abbr, rotation=0, fontsize=annot_size)
 
@@ -1273,7 +1305,6 @@ def monthly_heatmap_detailedview(
     _plt.xticks(rotation=0, fontsize=annot_size * 1.2)
     _plt.yticks(rotation=0, fontsize=annot_size * 1.2)
 
-    # Remove Year label, Month label
     ax.set_xlabel('')
     ax.set_ylabel('')
 
