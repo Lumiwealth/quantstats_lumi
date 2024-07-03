@@ -1208,6 +1208,8 @@ def monthly_heatmap_detailedview(
         annot_size=11,
         returns_label="Strategy",
         fontname="Arial",
+        monthly_dd_font_rate=0.8,
+        annual_dd_font_rate=0.9,
         savefig=None,
         show=True,
 ):
@@ -1233,7 +1235,7 @@ def monthly_heatmap_detailedview(
     fig.set_facecolor("white")
 
     annot_returns = pivot_returns.map(lambda x: f"{x:.2f}%" if _pd.notnull(x) else "")
-    annot_drawdowns = pivot_drawdowns.map(lambda x: f"({x:.2f}%)" if _pd.notnull(x) else "")
+    annot_drawdowns = pivot_drawdowns.map(lambda x: f"{x:.2f}%" if _pd.notnull(x) else "")
 
     mask = pivot_returns.isnull()
 
@@ -1257,7 +1259,7 @@ def monthly_heatmap_detailedview(
             return_color = cell.get_color()
             monthly_dd_color = 'gainsboro' if return_color == 'w' else 'dimgray'
             ax.text(j + 0.5, i + 0.55, annot_drawdowns.iloc[i, j],
-                    ha='center', va='top', fontsize=annot_size * 0.8, color=monthly_dd_color)
+                    ha='center', va='top', fontsize=annot_size * monthly_dd_font_rate, color=monthly_dd_color)
 
     annual_returns = pivot_returns.sum(axis=1)
 
@@ -1279,10 +1281,10 @@ def monthly_heatmap_detailedview(
                 transform=ax.transData)
 
         # Add Drawdown
-        ax.text(-0.1, idx + 0.8, f"({annual_dd[pivot_returns.index[idx]]:.2f}%)",
+        ax.text(-0.1, idx + 0.8, f"{annual_dd[pivot_returns.index[idx]]:.2f}%",
                 verticalalignment='center',
                 horizontalalignment='right',
-                fontsize=annot_size * 0.8,  # Set Drawdown font size slightly smaller
+                fontsize=annot_size * annual_dd_font_rate,  # Set Drawdown font size slightly smaller
                 transform=ax.transData,
                 color='dimgray')
 
