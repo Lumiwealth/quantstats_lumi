@@ -1255,7 +1255,7 @@ def monthly_heatmap_detailedview(
         for j in range(pivot_returns.shape[1]):
             cell = ax.get_children()[i * pivot_returns.shape[1] + j + 1]
             return_color = cell.get_color()
-            monthly_dd_color = 'white' if return_color == 'w' else 'black'
+            monthly_dd_color = 'gainsboro' if return_color == 'w' else 'dimgray'
             ax.text(j + 0.5, i + 0.55, annot_drawdowns.iloc[i, j],
                     ha='center', va='top', fontsize=annot_size * 0.8, color=monthly_dd_color)
 
