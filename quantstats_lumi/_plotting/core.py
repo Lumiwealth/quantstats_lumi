@@ -1234,8 +1234,8 @@ def monthly_heatmap_detailedview(
     ax.set_facecolor("white")
     fig.set_facecolor("white")
 
-    annot_returns = pivot_returns.map(lambda x: f"{x:.2f}%" if _pd.notnull(x) else "")
-    annot_drawdowns = pivot_drawdowns.map(lambda x: f"{x:.2f}%" if _pd.notnull(x) else "")
+    annot_returns = pivot_returns.map(lambda x: f"{x:.2f}" if _pd.notnull(x) else "")
+    annot_drawdowns = pivot_drawdowns.map(lambda x: f"{x:.2f}" if _pd.notnull(x) else "")
 
     mask = pivot_returns.isnull()
 
@@ -1267,7 +1267,7 @@ def monthly_heatmap_detailedview(
     annual_dd = annually_grouped.apply(_stats.max_drawdown) * 100
 
     # Generate ytick_labels
-    ytick_labels = [f"{year}\n{annual_returns[year]:.2f}%" for year in pivot_returns.index]
+    ytick_labels = [f"{year}\n{annual_returns[year]:.2f}" for year in pivot_returns.index]
 
     # Remove existing y-axis labels
     ax.set_yticks([])
@@ -1281,7 +1281,7 @@ def monthly_heatmap_detailedview(
                 transform=ax.transData)
 
         # Add Drawdown
-        ax.text(-0.1, idx + 0.8, f"{annual_dd[pivot_returns.index[idx]]:.2f}%",
+        ax.text(-0.1, idx + 0.8, f"{annual_dd[pivot_returns.index[idx]]:.2f}",
                 verticalalignment='center',
                 horizontalalignment='right',
                 fontsize=annot_size * annual_dd_font_rate,  # Set Drawdown font size slightly smaller
