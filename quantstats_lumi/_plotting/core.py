@@ -1274,8 +1274,7 @@ def monthly_heatmap_detailedview(
             else:
                 continue
 
-    annual_returns = pivot_returns.sum(axis=1)
-
+    annual_returns = (pivot_returns / 100 + 1).prod(axis=1).sub(1).mul(100)
     annually_grouped = daily_returns.groupby(daily_returns.index.year)
     annual_dd = annually_grouped.apply(_stats.max_drawdown) * 100
 
