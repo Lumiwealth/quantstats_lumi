@@ -1075,15 +1075,14 @@ def monthly_returns(
 
 def monthly_returns_detailedview(
     returns,
-    benchmark=None,
     grayscale=False,
     figsize=(14, 6),
-    annot_size=10,
+    annot_size=11,
     returns_label="Strategy",
     fontname="Arial",
     return_font_rate=1.0,
     monthly_dd_font_rate=0.8,
-    annual_dd_font_rate=0.9,
+    annual_dd_font_rate=0.8,
     savefig=None,
     show=True,
     prepare_returns=True,
@@ -1093,7 +1092,6 @@ def monthly_returns_detailedview(
 
     fig = _core.monthly_heatmap_detailedview(
         returns,
-        benchmark=benchmark,
         grayscale=grayscale,
         figsize=figsize,
         annot_size=annot_size,

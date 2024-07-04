@@ -88,24 +88,24 @@ def _get_colors(grayscale):
 
 
 def plot_returns_bars(
-    returns,
-    benchmark=None,
-    returns_label="Strategy",
-    hline=None,
-    hlw=None,
-    hlcolor="red",
-    hllabel="",
-    resample="YE",
-    title="Returns",
-    match_volatility=False,
-    log_scale=False,
-    figsize=(10, 6),
-    grayscale=False,
-    fontname="Arial",
-    ylabel=True,
-    subtitle=True,
-    savefig=None,
-    show=True,
+        returns,
+        benchmark=None,
+        returns_label="Strategy",
+        hline=None,
+        hlw=None,
+        hlcolor="red",
+        hllabel="",
+        resample="YE",
+        title="Returns",
+        match_volatility=False,
+        log_scale=False,
+        figsize=(10, 6),
+        grayscale=False,
+        fontname="Arial",
+        ylabel=True,
+        subtitle=True,
+        savefig=None,
+        show=True,
 ):
     if match_volatility and benchmark is None:
         raise ValueError("match_volatility requires passing of " "benchmark.")
@@ -235,29 +235,29 @@ def plot_returns_bars(
 
 
 def plot_timeseries(
-    returns,
-    benchmark=None,
-    title="Returns",
-    compound=False,
-    cumulative=True,
-    fill=False,
-    returns_label="Strategy",
-    hline=None,
-    hlw=None,
-    hlcolor="red",
-    hllabel="",
-    percent=True,
-    match_volatility=False,
-    log_scale=False,
-    resample=None,
-    lw=1.5,
-    figsize=(10, 6),
-    ylabel="",
-    grayscale=False,
-    fontname="Arial",
-    subtitle=True,
-    savefig=None,
-    show=True,
+        returns,
+        benchmark=None,
+        title="Returns",
+        compound=False,
+        cumulative=True,
+        fill=False,
+        returns_label="Strategy",
+        hline=None,
+        hlw=None,
+        hlcolor="red",
+        hllabel="",
+        percent=True,
+        match_volatility=False,
+        log_scale=False,
+        resample=None,
+        lw=1.5,
+        figsize=(10, 6),
+        ylabel="",
+        grayscale=False,
+        fontname="Arial",
+        subtitle=True,
+        savefig=None,
+        show=True,
 ):
     colors, ls, alpha = _get_colors(grayscale)
 
@@ -405,20 +405,20 @@ def plot_timeseries(
 
 
 def plot_histogram(
-    returns,
-    benchmark,
-    resample="ME",
-    bins=20,
-    fontname="Arial",
-    grayscale=False,
-    title="Returns",
-    kde=True,
-    figsize=(10, 6),
-    ylabel=True,
-    subtitle=True,
-    compounded=True,
-    savefig=None,
-    show=True,
+        returns,
+        benchmark,
+        resample="ME",
+        bins=20,
+        fontname="Arial",
+        grayscale=False,
+        title="Returns",
+        kde=True,
+        figsize=(10, 6),
+        ylabel=True,
+        subtitle=True,
+        compounded=True,
+        savefig=None,
+        show=True,
 ):
     # colors = ['#348dc1', '#003366', 'red']
     # if grayscale:
@@ -473,7 +473,7 @@ def plot_histogram(
     alpha = 0.7
     if isinstance(returns, _pd.DataFrame):
         pallete = (
-            colors[1 : len(returns.columns) + 1]
+            colors[1: len(returns.columns) + 1]
             if benchmark is None
             else colors[: len(returns.columns) + 1]
         )
@@ -604,22 +604,22 @@ def plot_histogram(
 
 
 def plot_rolling_stats(
-    returns,
-    benchmark=None,
-    title="",
-    returns_label="Strategy",
-    hline=None,
-    hlw=None,
-    hlcolor="red",
-    hllabel="",
-    lw=1.5,
-    figsize=(10, 6),
-    ylabel="",
-    grayscale=False,
-    fontname="Arial",
-    subtitle=True,
-    savefig=None,
-    show=True,
+        returns,
+        benchmark=None,
+        title="",
+        returns_label="Strategy",
+        hline=None,
+        hlw=None,
+        hlcolor="red",
+        hllabel="",
+        lw=1.5,
+        figsize=(10, 6),
+        ylabel="",
+        grayscale=False,
+        fontname="Arial",
+        subtitle=True,
+        savefig=None,
+        show=True,
 ):
     colors, _, _ = _get_colors(grayscale)
 
@@ -732,22 +732,22 @@ def plot_rolling_stats(
 
 
 def plot_rolling_beta(
-    returns,
-    benchmark,
-    window1=126,
-    window1_label="",
-    window2=None,
-    window2_label="",
-    title="",
-    hlcolor="red",
-    figsize=(10, 6),
-    grayscale=False,
-    fontname="Arial",
-    lw=1.5,
-    ylabel=True,
-    subtitle=True,
-    savefig=None,
-    show=True,
+        returns,
+        benchmark,
+        window1=126,
+        window1_label="",
+        window2=None,
+        window2_label="",
+        title="",
+        hlcolor="red",
+        figsize=(10, 6),
+        grayscale=False,
+        fontname="Arial",
+        lw=1.5,
+        ylabel=True,
+        subtitle=True,
+        savefig=None,
+        show=True,
 ):
     colors, _, _ = _get_colors(grayscale)
 
@@ -878,19 +878,19 @@ def plot_rolling_beta(
 
 
 def plot_longest_drawdowns(
-    returns,
-    periods=5,
-    lw=1.5,
-    fontname="Arial",
-    grayscale=False,
-    title=None,
-    log_scale=False,
-    figsize=(10, 6),
-    ylabel=True,
-    subtitle=True,
-    compounded=True,
-    savefig=None,
-    show=True,
+        returns,
+        periods=5,
+        lw=1.5,
+        fontname="Arial",
+        grayscale=False,
+        title=None,
+        log_scale=False,
+        figsize=(10, 6),
+        ylabel=True,
+        subtitle=True,
+        compounded=True,
+        savefig=None,
+        show=True,
 ):
     colors = ["#348dc1", "#003366", "red"]
     if grayscale:
@@ -899,8 +899,8 @@ def plot_longest_drawdowns(
     dd = _stats.to_drawdown_series(returns.fillna(0))
     dddf = _stats.drawdown_details(dd)
     longest_dd = dddf.sort_values(by="days", ascending=False, kind="mergesort")[
-        :periods
-    ]
+                 :periods
+                 ]
 
     fig, ax = _plt.subplots(figsize=figsize)
     ax.spines["top"].set_visible(False)
@@ -996,17 +996,17 @@ def plot_longest_drawdowns(
 
 
 def plot_distribution(
-    returns,
-    figsize=(10, 6),
-    fontname="Arial",
-    grayscale=False,
-    ylabel=True,
-    subtitle=True,
-    compounded=True,
-    title=None,
-    savefig=None,
-    show=True,
-    log_scale=False,
+        returns,
+        figsize=(10, 6),
+        fontname="Arial",
+        grayscale=False,
+        ylabel=True,
+        subtitle=True,
+        compounded=True,
+        title=None,
+        savefig=None,
+        show=True,
+        log_scale=False,
 ):
     colors = _FLATUI_COLORS
     if grayscale:
@@ -1110,20 +1110,20 @@ def plot_distribution(
 
 
 def plot_table(
-    tbl,
-    columns=None,
-    title="",
-    title_loc="left",
-    header=True,
-    colWidths=None,
-    rowLoc="right",
-    colLoc="right",
-    colLabels=None,
-    edges="horizontal",
-    orient="horizontal",
-    figsize=(5.5, 6),
-    savefig=None,
-    show=False,
+        tbl,
+        columns=None,
+        title="",
+        title_loc="left",
+        header=True,
+        colWidths=None,
+        rowLoc="right",
+        colLoc="right",
+        colLabels=None,
+        edges="horizontal",
+        orient="horizontal",
+        figsize=(5.5, 6),
+        savefig=None,
+        show=False,
 ):
     if columns is not None:
         try:
@@ -1202,14 +1202,13 @@ def plot_table(
 
 def monthly_heatmap_detailedview(
         returns,
-        benchmark=None,
         grayscale=False,
         figsize=(14, 6),
         annot_size=11,
         returns_label="Strategy",
         fontname="Arial",
         monthly_dd_font_rate=0.8,
-        annual_dd_font_rate=0.9,
+        annual_dd_font_rate=0.8,
         return_font_rate=1.0,
         savefig=None,
         show=True,
@@ -1237,14 +1236,15 @@ def monthly_heatmap_detailedview(
 
     annot_returns = pivot_returns.map(lambda x: f"{x:.2f}" if _pd.notnull(x) else "")
     annot_drawdowns = pivot_drawdowns.map(lambda x: f"{x:.2f}" if _pd.notnull(x) else "")
-
     mask = pivot_returns.isnull()
 
-    heatmap = _sns.heatmap(
+    return_font_size = annot_size * return_font_rate
+
+    _sns.heatmap(
         pivot_returns,
         annot=annot_returns,
         center=0,
-        annot_kws={"ha": 'center', "va": 'bottom'},
+        annot_kws={"size": return_font_size, "ha": 'center', "va": 'bottom'},
         fmt="s",
         linewidths=0.5,
         cmap=cmap,
@@ -1252,14 +1252,6 @@ def monthly_heatmap_detailedview(
         ax=ax,
         mask=mask
     )
-
-    first_text = heatmap.texts[0]
-    return_font_size = first_text.get_fontsize()
-    adjusted_return_font_size = return_font_size * return_font_rate
-
-    # Adjust font size for all returns annotations
-    for text in heatmap.texts:
-        text.set_fontsize(adjusted_return_font_size)
 
     common_index = pivot_returns.index.intersection(annot_drawdowns.index)
     pivot_returns = pivot_returns.loc[common_index]
@@ -1275,7 +1267,7 @@ def monthly_heatmap_detailedview(
 
                 monthly_dd_color = 'white' if return_color == 'w' else 'dimgray'
                 ax.text(j + 0.5, i + 0.55, annot_drawdowns.iloc[i, j],
-                        ha='center', va='top', fontsize=adjusted_return_font_size * monthly_dd_font_rate,
+                        ha='center', va='top', fontsize=return_font_size * monthly_dd_font_rate,
                         color=monthly_dd_color)
 
                 cell_index += 1
@@ -1295,14 +1287,14 @@ def monthly_heatmap_detailedview(
 
     # Add new y-axis labels
     for idx, label in enumerate(ytick_labels):
-        ax.text(-0.1, idx + 0.5, label,
+        ax.text(-0.1, idx + 0.45, label,
                 verticalalignment='center',
                 horizontalalignment='right',
-                fontsize=annot_size * 1.0,
+                fontsize=annot_size * 1.0,  # Maybe, 1.0 can be new argument like ytick_font_rate
                 transform=ax.transData)
 
         # Add Drawdown
-        ax.text(-0.1, idx + 0.8, f"{annual_dd[pivot_returns.index[idx]]:.2f}",
+        ax.text(-0.1, idx + 0.75, f"{annual_dd[pivot_returns.index[idx]]:.2f}",
                 verticalalignment='center',
                 horizontalalignment='right',
                 fontsize=annot_size * annual_dd_font_rate,  # Set Drawdown font size slightly smaller
