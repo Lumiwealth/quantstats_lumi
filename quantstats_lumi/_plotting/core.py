@@ -1210,10 +1210,11 @@ def monthly_heatmap_detailedview(
         fontname="Arial",
         monthly_dd_font_rate=0.8,
         annual_dd_font_rate=0.9,
+        return_font_rate=1.0,
         savefig=None,
         show=True,
 ):
-    daily_returns = returns.pct_change().fillna(0)
+    daily_returns = returns.pct_change(fill_method=None).fillna(0)
     monthly_returns = daily_returns.resample('ME').apply(lambda x: (x + 1).prod() - 1) * 100
     monthly_drawdowns = calculate_monthly_drawdowns(returns) * 100
 
@@ -1239,11 +1240,11 @@ def monthly_heatmap_detailedview(
 
     mask = pivot_returns.isnull()
 
-    _sns.heatmap(
+    heatmap = _sns.heatmap(
         pivot_returns,
         annot=annot_returns,
         center=0,
-        annot_kws={"size": annot_size, "ha": 'center', "va": 'bottom'},
+        annot_kws={"ha": 'center', "va": 'bottom'},
         fmt="s",
         linewidths=0.5,
         cmap=cmap,
@@ -1252,14 +1253,34 @@ def monthly_heatmap_detailedview(
         mask=mask
     )
 
-    # Add Drawdowns with matched colors
+    first_text = heatmap.texts[0]
+    return_font_size = first_text.get_fontsize()
+    adjusted_return_font_size = return_font_size * return_font_rate
+
+    # Adjust font size for all returns annotations
+    for text in heatmap.texts:
+        text.set_fontsize(adjusted_return_font_size)
+
+    common_index = pivot_returns.index.intersection(annot_drawdowns.index)
+    pivot_returns = pivot_returns.loc[common_index]
+    annot_drawdowns = annot_drawdowns.loc[common_index]
+
+    cell_index = 1
+
     for i in range(pivot_returns.shape[0]):
         for j in range(pivot_returns.shape[1]):
-            cell = ax.get_children()[i * pivot_returns.shape[1] + j + 1]
-            return_color = cell.get_color()
-            monthly_dd_color = 'gainsboro' if return_color == 'w' else 'dimgray'
-            ax.text(j + 0.5, i + 0.55, annot_drawdowns.iloc[i, j],
-                    ha='center', va='top', fontsize=annot_size * monthly_dd_font_rate, color=monthly_dd_color)
+            if _pd.notnull(pivot_returns.iloc[i, j]):
+                cell = ax.get_children()[cell_index]
+                return_color = cell.get_color()
+
+                monthly_dd_color = 'white' if return_color == 'w' else 'dimgray'
+                ax.text(j + 0.5, i + 0.55, annot_drawdowns.iloc[i, j],
+                        ha='center', va='top', fontsize=adjusted_return_font_size * monthly_dd_font_rate,
+                        color=monthly_dd_color)
+
+                cell_index += 1
+            else:
+                continue
 
     annual_returns = pivot_returns.sum(axis=1)
 
@@ -1312,6 +1333,7 @@ def monthly_heatmap_detailedview(
 
     _plt.tight_layout(pad=1)
     _plt.subplots_adjust(right=1.05)
+    _plt.grid(False)
 
     if savefig:
         if isinstance(savefig, dict):
