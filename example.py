@@ -33,7 +33,10 @@ example_parameters = {
 }
 
 # Generate the HTML report
-reports.html(returns, output=output_file_path, parameters=example_parameters)
+html_result = reports.html(returns, output=output_file_path, parameters=example_parameters)
+
+# Print the HTML result
+print(html_result)
 
 # Open the HTML file in a browser to visually inspect the output
 os.system(f"open {output_file_path}")

@@ -579,6 +579,11 @@ def html(
     with open(output, "w", encoding="utf-8") as f:
         f.write(tpl)
 
+    print(f"HTML report saved to: {output}")
+
+    # Return the metrics
+    return mtrx
+
 
 def full(
     returns,
@@ -732,7 +737,6 @@ def full(
         strategy_title=strategy_title,
         active=active,
     )
-
 
 def basic(
     returns,
@@ -1160,7 +1164,17 @@ def metrics(
             )
             * pct
         )
-        metrics["Win Days %%"] = _stats.win_rate(df, prepare_returns=False) * pct
+
+        # Get the win rate
+        win_rate = _stats.win_rate(df, prepare_returns=False)
+
+        # Number of win days in total
+        metrics["Win Days"] = win_rate * len(df)
+
+        # Number of loss days in total
+        metrics["Loss Days"] = len(df) - metrics["Win Days"]
+
+        metrics["Win Days %%"] = win_rate * pct
         metrics["Win Month %%"] = (
             _stats.win_rate(
                 df, compounded=compounded, aggregate="ME", prepare_returns=False
