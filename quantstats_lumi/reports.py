@@ -1287,7 +1287,6 @@ def metrics(
             metrics["Avg. Drawdown Days"] = "-"
 
     metrics.columns = [col if "~" not in col else "" for col in metrics.columns]
-    metrics.columns = [col[:-1] if "%" in col else col for col in metrics.columns]
     metrics = metrics.T
 
     if "benchmark" in df:
