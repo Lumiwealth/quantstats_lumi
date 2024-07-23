@@ -1085,11 +1085,7 @@ def monthly_returns_detailedview(
     annual_dd_font_rate=0.8,
     savefig=None,
     show=True,
-    prepare_returns=True,
 ):
-    if prepare_returns:
-        returns = _utils._prepare_returns(returns)
-
     fig = _core.monthly_heatmap_detailedview(
         returns,
         grayscale=grayscale,
@@ -1103,5 +1099,6 @@ def monthly_returns_detailedview(
         savefig=savefig,
         show=show,
     )
+
     if not show:
         return fig
