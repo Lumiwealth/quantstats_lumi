@@ -53,18 +53,18 @@ def to_plotly(fig):
 
 
 def snapshot(
-    returns,
-    grayscale=False,
-    figsize=(10, 8),
-    title="Portfolio Summary",
-    fontname="Arial",
-    lw=1.5,
-    mode="comp",
-    subtitle=True,
-    savefig=None,
-    show=True,
-    log_scale=False,
-    **kwargs,
+        returns,
+        grayscale=False,
+        figsize=(10, 8),
+        title="Portfolio Summary",
+        fontname="Arial",
+        lw=1.5,
+        mode="comp",
+        subtitle=True,
+        savefig=None,
+        show=True,
+        log_scale=False,
+        **kwargs,
 ):
     strategy_colname = kwargs.get("strategy_col", "Strategy")
 
@@ -257,17 +257,17 @@ def snapshot(
 
 
 def earnings(
-    returns,
-    start_balance=1e5,
-    mode="comp",
-    grayscale=False,
-    figsize=(10, 6),
-    title="Portfolio Earnings",
-    fontname="Arial",
-    lw=1.5,
-    subtitle=True,
-    savefig=None,
-    show=True,
+        returns,
+        start_balance=1e5,
+        mode="comp",
+        grayscale=False,
+        figsize=(10, 6),
+        title="Portfolio Earnings",
+        fontname="Arial",
+        lw=1.5,
+        subtitle=True,
+        savefig=None,
+        show=True,
 ):
     colors = _GRAYSCALE_COLORS if grayscale else _FLATUI_COLORS
     alpha = 0.5 if grayscale else 0.8
@@ -364,21 +364,21 @@ def earnings(
 
 
 def returns(
-    returns,
-    benchmark=None,
-    grayscale=False,
-    figsize=(10, 6),
-    fontname="Arial",
-    lw=1.5,
-    match_volatility=False,
-    compound=True,
-    cumulative=True,
-    resample=None,
-    ylabel="Cumulative Returns",
-    subtitle=True,
-    savefig=None,
-    show=True,
-    prepare_returns=True,
+        returns,
+        benchmark=None,
+        grayscale=False,
+        figsize=(10, 6),
+        fontname="Arial",
+        lw=1.5,
+        match_volatility=False,
+        compound=True,
+        cumulative=True,
+        resample=None,
+        ylabel="Cumulative Returns",
+        subtitle=True,
+        savefig=None,
+        show=True,
+        prepare_returns=True,
 ):
     title = "Cumulative Returns" if compound else "Returns"
     if benchmark is not None:
@@ -417,21 +417,21 @@ def returns(
 
 
 def log_returns(
-    returns,
-    benchmark=None,
-    grayscale=False,
-    figsize=(10, 5),
-    fontname="Arial",
-    lw=1.5,
-    match_volatility=False,
-    compound=True,
-    cumulative=True,
-    resample=None,
-    ylabel="Cumulative Returns",
-    subtitle=True,
-    savefig=None,
-    show=True,
-    prepare_returns=True,
+        returns,
+        benchmark=None,
+        grayscale=False,
+        figsize=(10, 5),
+        fontname="Arial",
+        lw=1.5,
+        match_volatility=False,
+        compound=True,
+        cumulative=True,
+        resample=None,
+        ylabel="Cumulative Returns",
+        subtitle=True,
+        savefig=None,
+        show=True,
+        prepare_returns=True,
 ):
     title = "Cumulative Returns" if compound else "Returns"
     if benchmark is not None:
@@ -473,19 +473,19 @@ def log_returns(
 
 
 def daily_returns(
-    returns,
-    benchmark,
-    grayscale=False,
-    figsize=(10, 4),
-    fontname="Arial",
-    lw=0.5,
-    log_scale=False,
-    ylabel="Returns",
-    subtitle=True,
-    savefig=None,
-    show=True,
-    prepare_returns=True,
-    active=False,
+        returns,
+        benchmark,
+        grayscale=False,
+        figsize=(10, 4),
+        fontname="Arial",
+        lw=0.5,
+        log_scale=False,
+        ylabel="Returns",
+        subtitle=True,
+        savefig=None,
+        show=True,
+        prepare_returns=True,
+        active=False,
 ):
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
@@ -517,22 +517,22 @@ def daily_returns(
 
 
 def yearly_returns(
-    returns,
-    benchmark=None,
-    fontname="Arial",
-    grayscale=False,
-    hlw=1.5,
-    hlcolor="red",
-    hllabel="",
-    match_volatility=False,
-    log_scale=False,
-    figsize=(10, 5),
-    ylabel=True,
-    subtitle=True,
-    compounded=True,
-    savefig=None,
-    show=True,
-    prepare_returns=True,
+        returns,
+        benchmark=None,
+        fontname="Arial",
+        grayscale=False,
+        hlw=1.5,
+        hlcolor="red",
+        hllabel="",
+        match_volatility=False,
+        log_scale=False,
+        figsize=(10, 5),
+        ylabel=True,
+        subtitle=True,
+        compounded=True,
+        savefig=None,
+        show=True,
+        prepare_returns=True,
 ):
     title = "EOY Returns"
     if benchmark is not None:
@@ -578,18 +578,18 @@ def yearly_returns(
 
 
 def distribution(
-    returns,
-    fontname="Arial",
-    grayscale=False,
-    ylabel=True,
-    figsize=(10, 6),
-    subtitle=True,
-    compounded=True,
-    savefig=None,
-    show=True,
-    title=None,
-    prepare_returns=True,
-    log_scale=True,
+        returns,
+        fontname="Arial",
+        grayscale=False,
+        ylabel=True,
+        figsize=(10, 6),
+        subtitle=True,
+        compounded=True,
+        savefig=None,
+        show=True,
+        title=None,
+        prepare_returns=True,
+        log_scale=True,
 ):
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
@@ -612,18 +612,18 @@ def distribution(
 
 
 def histogram(
-    returns,
-    benchmark=None,
-    resample="ME",
-    fontname="Arial",
-    grayscale=False,
-    figsize=(10, 5),
-    ylabel=True,
-    subtitle=True,
-    compounded=True,
-    savefig=None,
-    show=True,
-    prepare_returns=True,
+        returns,
+        benchmark=None,
+        resample="ME",
+        fontname="Arial",
+        grayscale=False,
+        figsize=(10, 5),
+        ylabel=True,
+        subtitle=True,
+        compounded=True,
+        savefig=None,
+        show=True,
+        prepare_returns=True,
 ):
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
@@ -658,19 +658,19 @@ def histogram(
 
 
 def drawdown(
-    returns,
-    grayscale=False,
-    figsize=(10, 5),
-    fontname="Arial",
-    lw=1,
-    log_scale=False,
-    match_volatility=False,
-    compound=False,
-    ylabel="Drawdown",
-    resample=None,
-    subtitle=True,
-    savefig=None,
-    show=True,
+        returns,
+        grayscale=False,
+        figsize=(10, 5),
+        fontname="Arial",
+        lw=1,
+        log_scale=False,
+        match_volatility=False,
+        compound=False,
+        ylabel="Drawdown",
+        resample=None,
+        subtitle=True,
+        savefig=None,
+        show=True,
 ):
     dd = _stats.to_drawdown_series(returns)
 
@@ -700,20 +700,20 @@ def drawdown(
 
 
 def drawdowns_periods(
-    returns,
-    periods=5,
-    lw=1.5,
-    log_scale=False,
-    fontname="Arial",
-    grayscale=False,
-    title=None,
-    figsize=(10, 5),
-    ylabel=True,
-    subtitle=True,
-    compounded=True,
-    savefig=None,
-    show=True,
-    prepare_returns=True,
+        returns,
+        periods=5,
+        lw=1.5,
+        log_scale=False,
+        fontname="Arial",
+        grayscale=False,
+        title=None,
+        figsize=(10, 5),
+        ylabel=True,
+        subtitle=True,
+        compounded=True,
+        savefig=None,
+        show=True,
+        prepare_returns=True,
 ):
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
@@ -738,21 +738,21 @@ def drawdowns_periods(
 
 
 def rolling_beta(
-    returns,
-    benchmark,
-    window1=126,
-    window1_label="6-Months",
-    window2=365,
-    window2_label="12-Months",
-    lw=1.5,
-    fontname="Arial",
-    grayscale=False,
-    figsize=(10, 3),
-    ylabel=True,
-    subtitle=True,
-    savefig=None,
-    show=True,
-    prepare_returns=True,
+        returns,
+        benchmark,
+        window1=126,
+        window1_label="6-Months",
+        window2=365,
+        window2_label="12-Months",
+        lw=1.5,
+        fontname="Arial",
+        grayscale=False,
+        figsize=(10, 3),
+        ylabel=True,
+        subtitle=True,
+        savefig=None,
+        show=True,
+        prepare_returns=True,
 ):
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
@@ -781,19 +781,19 @@ def rolling_beta(
 
 
 def rolling_volatility(
-    returns,
-    benchmark=None,
-    period=126,
-    period_label="6-Months",
-    periods_per_year=365,
-    lw=1.5,
-    fontname="Arial",
-    grayscale=False,
-    figsize=(10, 3),
-    ylabel="Volatility",
-    subtitle=True,
-    savefig=None,
-    show=True,
+        returns,
+        benchmark=None,
+        period=126,
+        period_label="6-Months",
+        periods_per_year=365,
+        lw=1.5,
+        fontname="Arial",
+        grayscale=False,
+        figsize=(10, 3),
+        ylabel="Volatility",
+        subtitle=True,
+        savefig=None,
+        show=True,
 ):
     returns = _stats.rolling_volatility(returns, period, periods_per_year)
 
@@ -823,20 +823,20 @@ def rolling_volatility(
 
 
 def rolling_sharpe(
-    returns,
-    benchmark=None,
-    rf=0.0,
-    period=126,
-    period_label="6-Months",
-    periods_per_year=365,
-    lw=1.25,
-    fontname="Arial",
-    grayscale=False,
-    figsize=(10, 3),
-    ylabel="Sharpe",
-    subtitle=True,
-    savefig=None,
-    show=True,
+        returns,
+        benchmark=None,
+        rf=0.0,
+        period=126,
+        period_label="6-Months",
+        periods_per_year=365,
+        lw=1.25,
+        fontname="Arial",
+        grayscale=False,
+        figsize=(10, 3),
+        ylabel="Sharpe",
+        subtitle=True,
+        savefig=None,
+        show=True,
 ):
     returns = _stats.rolling_sharpe(
         returns,
@@ -872,20 +872,20 @@ def rolling_sharpe(
 
 
 def rolling_sortino(
-    returns,
-    benchmark=None,
-    rf=0.0,
-    period=126,
-    period_label="6-Months",
-    periods_per_year=365,
-    lw=1.25,
-    fontname="Arial",
-    grayscale=False,
-    figsize=(10, 3),
-    ylabel="Sortino",
-    subtitle=True,
-    savefig=None,
-    show=True,
+        returns,
+        benchmark=None,
+        rf=0.0,
+        period=126,
+        period_label="6-Months",
+        periods_per_year=365,
+        lw=1.25,
+        fontname="Arial",
+        grayscale=False,
+        figsize=(10, 3),
+        ylabel="Sortino",
+        subtitle=True,
+        savefig=None,
+        show=True,
 ):
     returns = _stats.rolling_sortino(returns, rf, period, True, periods_per_year)
 
@@ -915,21 +915,21 @@ def rolling_sortino(
 
 
 def monthly_heatmap(
-    returns,
-    benchmark=None,
-    annot_size=10,
-    figsize=(10, 5),
-    cbar=True,
-    square=False,
-    returns_label="Strategy",
-    compounded=True,
-    eoy=False,
-    grayscale=False,
-    fontname="Arial",
-    ylabel=True,
-    savefig=None,
-    show=True,
-    active=False,
+        returns,
+        benchmark=None,
+        annot_size=10,
+        figsize=(10, 5),
+        cbar=True,
+        square=False,
+        returns_label="Strategy",
+        compounded=True,
+        eoy=False,
+        grayscale=False,
+        fontname="Arial",
+        ylabel=True,
+        savefig=None,
+        show=True,
+        active=False,
 ):
     # colors, ls, alpha = _core._get_colors(grayscale)
     cmap = "gray" if grayscale else "RdYlGn"
@@ -967,7 +967,7 @@ def monthly_heatmap(
             color="black",
         )
         benchmark = (
-            _stats.monthly_returns(benchmark, eoy=eoy, compounded=compounded) * 100
+                _stats.monthly_returns(benchmark, eoy=eoy, compounded=compounded) * 100
         )
         active_returns = returns - benchmark
 
@@ -1044,18 +1044,18 @@ def monthly_heatmap(
 
 
 def monthly_returns(
-    returns,
-    annot_size=10,
-    figsize=(10, 5),
-    cbar=True,
-    square=False,
-    compounded=True,
-    eoy=False,
-    grayscale=False,
-    fontname="Arial",
-    ylabel=True,
-    savefig=None,
-    show=True,
+        returns,
+        annot_size=10,
+        figsize=(10, 5),
+        cbar=True,
+        square=False,
+        compounded=True,
+        eoy=False,
+        grayscale=False,
+        fontname="Arial",
+        ylabel=True,
+        savefig=None,
+        show=True,
 ):
     return monthly_heatmap(
         returns=returns,
@@ -1074,22 +1074,18 @@ def monthly_returns(
 
 
 def monthly_returns_detailedview(
-    returns,
-    grayscale=False,
-    figsize=(14, 6),
-    annot_size=11,
-    returns_label="Strategy",
-    fontname="Arial",
-    return_font_rate=1.0,
-    monthly_dd_font_rate=0.8,
-    annual_dd_font_rate=0.8,
-    savefig=None,
-    show=True,
-    prepare_returns=True,
+        returns,
+        grayscale=False,
+        figsize=(14, 6),
+        annot_size=11,
+        returns_label="Strategy",
+        fontname="Arial",
+        return_font_rate=1.0,
+        monthly_dd_font_rate=0.8,
+        annual_dd_font_rate=0.8,
+        savefig=None,
+        show=True,
 ):
-    if prepare_returns:
-        returns = _utils._prepare_returns(returns)
-
     fig = _core.monthly_heatmap_detailedview(
         returns,
         grayscale=grayscale,
