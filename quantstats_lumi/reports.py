@@ -24,6 +24,7 @@ from datetime import datetime as _dt
 from io import StringIO
 from math import ceil as _ceil
 from math import sqrt as _sqrt
+from typing import Optional, Union
 
 import numpy as _np
 import pandas as _pd
@@ -586,8 +587,8 @@ def html(
 
 
 def full(
-    returns,
-    benchmark=None,
+    returns:Union[_pd.Series,_pd.DataFrame],
+    benchmark:Optional[_pd.Series]=None,
     rf=0.0,
     grayscale=False,
     figsize=(8, 5),
@@ -599,6 +600,11 @@ def full(
 ):
     """calculates and plots full performance metrics"""
 
+    if isinstance(returns, (_pd.Series,_pd.DataFrame)) is False:
+        raise ValueError(f"returns must be a pandas Series or DataFrame, got {type(returns)}")
+    if benchmark is not None and isinstance(benchmark, _pd.Series) is False:
+        raise ValueError(f"benchmark must be None or pandas Series, got {type(benchmark)}")
+    
     # prepare timeseries
     if match_dates:
         returns = returns.dropna()
