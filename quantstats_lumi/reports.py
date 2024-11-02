@@ -1075,31 +1075,58 @@ def metrics(
     today = df.index[-1]  # _dt.today()
     metrics["MTD %"] = comp_func(df[df.index >= _dt(today.year, today.month, 1)]) * pct
 
+    metrics["YTD %"] = comp_func(df[df.index >= _dt(today.year, 1, 1)]) * pct
+
+    d = today - relativedelta(months=1)
+    metrics["1M %"] = comp_func(df[df.index >= d]) * pct
+
     d = today - relativedelta(months=3)
     metrics["3M %"] = comp_func(df[df.index >= d]) * pct
 
     d = today - relativedelta(months=6)
     metrics["6M %"] = comp_func(df[df.index >= d]) * pct
 
-    metrics["YTD %"] = comp_func(df[df.index >= _dt(today.year, 1, 1)]) * pct
-
     d = today - relativedelta(years=1)
     metrics["1Y %"] = comp_func(df[df.index >= d]) * pct
 
-    d = today - relativedelta(months=35)
-    metrics["3Y (ann.) %"] = (
-        _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
-    )
+    d = today - relativedelta(years=2)
+    metrics["2Y %"] = comp_func(df[df.index >= d]) * pct
 
-    d = today - relativedelta(months=59)
-    metrics["5Y (ann.) %"] = (
-        _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
-    )
+    d = today - relativedelta(years=3)
+    metrics["3Y %"] = comp_func(df[df.index >= d]) * pct
+
+    d = today - relativedelta(years=5)
+    metrics["5Y %"] = comp_func(df[df.index >= d]) * pct
 
     d = today - relativedelta(years=10)
-    metrics["10Y (ann.) %"] = (
-        _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
-    )
+    metrics["10Y %"] = comp_func(df[df.index >= d]) * pct
+
+    d = today - relativedelta(years=15)
+    metrics["15Y %"] = comp_func(df[df.index >= d]) * pct
+
+    d = today - relativedelta(years=20)
+    metrics["20Y %"] = comp_func(df[df.index >= d]) * pct
+
+    d = today - relativedelta(months=11)
+    metrics["1Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
+
+    d = today - relativedelta(months=23)
+    metrics["2Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
+
+    d = today - relativedelta(months=35)
+    metrics["3Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
+
+    d = today - relativedelta(months=59)
+    metrics["5Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
+
+    d = today - relativedelta(years=10)
+    metrics["10Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
+
+    d = today - relativedelta(years=15)
+    metrics["15Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
+
+    d = today - relativedelta(years=20)
+    metrics["20Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
 
     metrics["All-time (ann.) %"] = _stats.cagr(df, 0.0, compounded, win_year) * pct
 
