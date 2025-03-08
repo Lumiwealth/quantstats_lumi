@@ -51,12 +51,27 @@ def _get_trading_periods(periods_per_year=365):
 
 def _match_dates(returns, benchmark):
     """match dates of returns and benchmark"""
+    print(type(returns), type(benchmark))
     if isinstance(returns, _pd.DataFrame):
+        print('1.1', returns[returns.columns[0]].ne(0).idxmax())
         loc = max(returns[returns.columns[0]].ne(0).idxmax(), benchmark.ne(0).idxmax())
-    else:
+    elif isinstance(returns, _pd.Series) and isinstance(benchmark, _pd.Series):
+        print('1.1', returns.ne(0).idxmax())
+        print('1.1', benchmark.ne(0).idxmax())
         loc = max(returns.ne(0).idxmax(), benchmark.ne(0).idxmax())
+    else:
+        print('1.2', returns.ne(0).idxmax())
+        print('1.2', benchmark.iloc[:, 0].ne(0).idxmax())
+        print("----------")
+        loc = max(returns.ne(0).idxmax(), benchmark.iloc[:, 0].ne(0).idxmax())
+        
+    print('1.3', 'Subset returns')
     returns = returns.loc[loc:]
+    print('1.3', 'Subset returns')
+    
+    print('1.4', 'Subset benchmark')
     benchmark = benchmark.loc[loc:]
+    print('1.4', 'Subset benchmark')
 
     return returns, benchmark
 
@@ -133,6 +148,8 @@ def html(
     if match_dates:
         returns = returns.dropna()
     returns = _utils._prepare_returns(returns)
+    
+    print("Returns prepared")
 
     strategy_title = kwargs.get("strategy_title", "Strategy")
     if (
@@ -141,9 +158,13 @@ def html(
         and isinstance(strategy_title, str)
     ):
         strategy_title = list(returns.columns)
+    
+    print("Strategy title set")
 
     if benchmark is not None:
         benchmark_title = kwargs.get("benchmark_title", "Benchmark")
+        print('1', benchmark_title)
+        
         if kwargs.get("benchmark_title") is None:
             if isinstance(benchmark, str):
                 benchmark_title = benchmark
@@ -151,20 +172,29 @@ def html(
                 benchmark_title = benchmark.name
             elif isinstance(benchmark, _pd.DataFrame):
                 benchmark_title = benchmark[benchmark.columns[0]].name
-
+            print('2', benchmark_title)
+        
         tpl = tpl.replace(
             "{{benchmark_title}}", f"Benchmark is {benchmark_title.upper()} | "
         )
         benchmark = _utils._prepare_benchmark(benchmark, returns.index, rf)
+        print("3. Benchmark prepared")
+        
         if match_dates is True:
+            print("4. Matching dates")
             returns, benchmark = _match_dates(returns, benchmark)
+            print("5. Matched dates")
     else:
         benchmark_title = None
+        
+    print("Benchmark prepared")
 
     date_range = returns.index.strftime("%e %b, %Y")
     tpl = tpl.replace("{{date_range}}", date_range[0] + " - " + date_range[-1])
     tpl = tpl.replace("{{title}}", title)
     tpl = tpl.replace("{{v}}", __version__)
+    
+    print("Date range set")
 
     if benchmark is not None:
         benchmark.name = benchmark_title
@@ -172,6 +202,8 @@ def html(
         returns.name = strategy_title
     elif isinstance(returns, _pd.DataFrame):
         returns.columns = strategy_title
+        
+    print("Benchmark name set")
 
     mtrx = metrics(
         returns=returns,
@@ -187,6 +219,8 @@ def html(
         benchmark_title=benchmark_title,
         strategy_title=strategy_title,
     )[2:]
+    
+    print("Metrics calculated")
 
     mtrx.index.name = "Metric"
     tpl = tpl.replace("{{metrics}}", _html_table(mtrx))
@@ -235,6 +269,8 @@ def html(
     sortino = mtrx.loc["Sortino", strategy_title]
     # Add the Sharpe to the template
     tpl = tpl.replace("{{sortino}}", sortino)
+    
+    print("Summary metrics added")
 
 
     if isinstance(returns, _pd.DataFrame):
@@ -251,6 +287,8 @@ def html(
     tpl = tpl.replace(
         "<tr><td></td><td></td></tr>", '<tr><td colspan="2"><hr></td></tr>'
     )
+    
+    print("Table formatting done")
 
     if parameters is not None:
         tpl = tpl.replace("{{parameters_section}}", parameters_section(parameters))
@@ -284,6 +322,8 @@ def html(
         yoy.index.name = "Year"
         tpl = tpl.replace("{{eoy_title}}", "<h3>EOY Returns</h3>")
         tpl = tpl.replace("{{eoy_table}}", _html_table(yoy))
+        
+    print("EOY table added")
 
     if isinstance(returns, _pd.Series):
         dd = _stats.to_drawdown_series(returns)
@@ -310,6 +350,8 @@ def html(
                 dd_html_table + f"<h3>{col}</h3><br>" + StringIO(html_str).read()
             )
         tpl = tpl.replace("{{dd_info}}", dd_html_table)
+        
+    print("Drawdown info added")
 
     active = kwargs.get("active_returns", False)
     # plots
@@ -330,6 +372,8 @@ def html(
         prepare_returns=False,
     )
     tpl = tpl.replace(placeholder_returns, _embed_figure(figfile, figfmt))
+    
+    print("Returns plot added")
 
     if benchmark is not None and show_match_volatility:
         figfile = _utils._file_stream()
@@ -362,6 +406,8 @@ def html(
         prepare_returns=False,
     )
     tpl = tpl.replace("{{eoy_returns}}", _embed_figure(figfile, figfmt))
+    
+    print("Yearly returns plot added")
 
     figfile = _utils._file_stream()
     _plots.histogram(
@@ -377,6 +423,8 @@ def html(
         prepare_returns=False,
     )
     tpl = tpl.replace("{{monthly_dist}}", _embed_figure(figfile, figfmt))
+    
+    print("Histo returns plot added")
 
     figfile = _utils._file_stream()
     _plots.daily_returns(
@@ -392,6 +440,8 @@ def html(
         active=active,
     )
     tpl = tpl.replace("{{daily_returns}}", _embed_figure(figfile, figfmt))
+    
+    print("Daily returns plot added")
 
     if benchmark is not None:
         figfile = _utils._file_stream()
@@ -424,6 +474,8 @@ def html(
         periods_per_year=win_year,
     )
     tpl = tpl.replace("{{rolling_vol}}", _embed_figure(figfile, figfmt))
+    
+    print("Rolling volatility plot added")
 
     figfile = _utils._file_stream()
     _plots.rolling_sharpe(
@@ -452,6 +504,8 @@ def html(
         periods_per_year=win_year,
     )
     tpl = tpl.replace("{{rolling_sortino}}", _embed_figure(figfile, figfmt))
+    
+    print("Rolling sortino plot added")
 
     figfile = _utils._file_stream()
     if isinstance(returns, _pd.Series):
@@ -498,6 +552,8 @@ def html(
         ylabel=False,
     )
     tpl = tpl.replace("{{dd_plot}}", _embed_figure(figfile, figfmt))
+    
+    print("Drawdown plot added")
 
     figfile = _utils._file_stream()
     if isinstance(returns, _pd.Series):
@@ -534,6 +590,8 @@ def html(
             embed.append(figfile)
         tpl = tpl.replace("{{monthly_heatmap}}", _embed_figure(embed, figfmt))
 
+    print("Monthly heatmap added")
+
     figfile = _utils._file_stream()
 
     if isinstance(returns, _pd.Series):
@@ -567,6 +625,8 @@ def html(
             )
             embed.append(figfile)
         tpl = tpl.replace("{{returns_dist}}", _embed_figure(embed, figfmt))
+    
+    print("Returns distribution added")
 
     tpl = _regex.sub(r"\{\{(.*?)\}\}", "", tpl)
     tpl = tpl.replace("white-space:pre;", "")

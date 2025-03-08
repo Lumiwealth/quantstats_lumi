@@ -629,7 +629,8 @@ def histogram(
         returns = _utils._prepare_returns(returns)
         if benchmark is not None:
             benchmark = _utils._prepare_returns(benchmark)
-
+    print("prepared returns")
+    
     if resample == "W":
         title = "Weekly "
     elif resample == "ME":
@@ -640,6 +641,8 @@ def histogram(
         title = "Annual "
     else:
         title = ""
+        
+    print("title")
 
     return _core.plot_histogram(
         returns,
@@ -1085,7 +1088,11 @@ def monthly_returns_detailedview(
     annual_dd_font_rate=0.8,
     savefig=None,
     show=True,
+    prepare_returns=True,
 ):
+    if prepare_returns:
+        returns = _utils._prepare_returns(returns)
+
     fig = _core.monthly_heatmap_detailedview(
         returns,
         grayscale=grayscale,
@@ -1099,6 +1106,5 @@ def monthly_returns_detailedview(
         savefig=savefig,
         show=show,
     )
-
     if not show:
         return fig

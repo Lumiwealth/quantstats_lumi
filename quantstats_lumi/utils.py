@@ -253,7 +253,9 @@ def _prepare_benchmark(benchmark=None, period="max", rf=0.0, prepare_returns=Tru
         return None
 
     if isinstance(benchmark, str):
+        print("Downloading benchmark...")
         benchmark = download_returns(benchmark)
+        print("Benchmark downloaded.")
 
     elif isinstance(benchmark, _pd.DataFrame):
         benchmark = benchmark[benchmark.columns[0]].copy()
