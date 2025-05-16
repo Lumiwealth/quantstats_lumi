@@ -235,7 +235,6 @@ def html(
     total_return_value = mtrx.loc["Total Return", strategy_title]
     tpl = tpl.replace("{{total_return}}", str(total_return_value))
 
-
     # Max Drawdown #
     max_drawdown_value = mtrx.loc["Max Drawdown", strategy_title]
     tpl = tpl.replace("{{max_drawdown}}", str(max_drawdown_value))
@@ -255,7 +254,6 @@ def html(
     # Sortino #
     sortino_value = mtrx.loc["Sortino", strategy_title]
     tpl = tpl.replace("{{sortino}}", str(sortino_value))
-
 
     if isinstance(returns, _pd.DataFrame):
         num_cols = len(returns.columns)
@@ -764,6 +762,7 @@ def full(
         active=active,
     )
 
+
 def basic(
     returns,
     benchmark=None,
@@ -846,6 +845,7 @@ def basic(
         active=active,
     )
 
+
 def parameters_section(parameters):
     """returns a formatted section for strategy parameters"""
     if parameters is None:
@@ -872,6 +872,7 @@ def parameters_section(parameters):
     """
 
     return tpl
+
 
 def metrics(
     returns,
@@ -983,11 +984,13 @@ def metrics(
     metrics["~"] = blank
 
     if compounded:
-        metrics["Total Return"] = (_stats.comp(df) * pct).map("{:,.0f}%".format)  # No decimals for readability as it is a large number
+        metrics["Total Return"] = (_stats.comp(df) * pct).map(
+            "{:,.0f}%".format
+        )  # No decimals for readability as it is a large number
     else:
         metrics["Total Return"] = (df.sum() * pct).map("{:,.2f}%".format)
 
-    metrics["CAGR% (Annual Return) "] = _stats.cagr(df, rf, compounded, win_year) * pct
+    metrics["CAGR% (Annual Return) "] = _stats.cagr(df, rf, compounded) * pct
 
     metrics["~~~~~~~~~~~~~~"] = blank
 
@@ -995,7 +998,9 @@ def metrics(
     metrics["RoMaD"] = _stats.romad(df, win_year, True)
 
     if benchmark is not None:
-        metrics["Corr to Benchmark "] = _stats.benchmark_correlation(df, benchmark, True)
+        metrics["Corr to Benchmark "] = _stats.benchmark_correlation(
+            df, benchmark, True
+        )
     metrics["Prob. Sharpe Ratio %"] = (
         _stats.probabilistic_sharpe_ratio(df, rf, win_year, False) * pct
     )
@@ -1122,21 +1127,15 @@ def metrics(
     metrics["1Y %"] = comp_func(df[df.index >= d]) * pct
 
     d = today - relativedelta(months=35)
-    metrics["3Y (ann.) %"] = (
-        _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
-    )
+    metrics["3Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded) * pct
 
     d = today - relativedelta(months=59)
-    metrics["5Y (ann.) %"] = (
-        _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
-    )
+    metrics["5Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded) * pct
 
     d = today - relativedelta(years=10)
-    metrics["10Y (ann.) %"] = (
-        _stats.cagr(df[df.index >= d], 0.0, compounded, win_year) * pct
-    )
+    metrics["10Y (ann.) %"] = _stats.cagr(df[df.index >= d], 0.0, compounded) * pct
 
-    metrics["All-time (ann.) %"] = _stats.cagr(df, 0.0, compounded, win_year) * pct
+    metrics["All-time (ann.) %"] = _stats.cagr(df, 0.0, compounded) * pct
 
     # best/worst
     if mode.lower() == "full":

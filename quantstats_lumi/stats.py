@@ -79,7 +79,7 @@ def distribution(returns, compounded=True, prepare_returns=True):
         else:
             returns = returns[returns.columns[0]]
 
-    apply_fnc = comp if compounded else 'sum'
+    apply_fnc = comp if compounded else "sum"
     daily = returns.dropna()
 
     if prepare_returns:
@@ -582,9 +582,9 @@ def gain_to_pain_ratio(returns, rf=0, resolution="D"):
     return returns.sum() / downside
 
 
-def cagr(returns, rf=0.0, compounded=True, periods=365):
+def cagr(returns, rf=0.0, compounded=True):
     """
-    Calculates the communicative annualized growth return
+    Calculates the cummulative annualized growth rate
     (CAGR%) of access returns
 
     If rf is non-zero, you must specify periods.
@@ -596,7 +596,7 @@ def cagr(returns, rf=0.0, compounded=True, periods=365):
     else:
         total = _np.sum(total, axis=0)
 
-    years = (returns.index[-1] - returns.index[0]).days / periods
+    years = (returns.index[-1] - returns.index[0]).days / 365
 
     res = abs(total + 1.0) ** (1.0 / years) - 1
 
@@ -616,7 +616,7 @@ def rar(returns, rf=0.0, periods=365):
     In this case, rf is assumed to be expressed in yearly (annualized) terms
     """
     returns = _utils._prepare_returns(returns, rf)
-    return cagr(returns=returns, periods=periods) / exposure(returns)
+    return cagr(returns=returns) / exposure(returns)
 
 
 def skew(returns, prepare_returns=True):
@@ -643,7 +643,7 @@ def calmar(returns, prepare_returns=True, periods=365):
     """Calculates the calmar ratio (CAGR% / MaxDD%)"""
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
-    cagr_ratio = cagr(returns=returns, periods=periods)
+    cagr_ratio = cagr(returns=returns)
     max_dd = max_drawdown(returns)
     return cagr_ratio / abs(max_dd)
 
@@ -951,6 +951,7 @@ def kelly_criterion(returns, prepare_returns=True):
 
     return ((win_loss_ratio * win_prob) - lose_prob) / win_loss_ratio
 
+
 # Calculate the correlation to the benchmark
 def benchmark_correlation(returns, benchmark, prepare_returns=True):
     """Calculates the correlation to the benchmark"""
@@ -1184,4 +1185,4 @@ def romad(returns, periods=365, annualize=True, smart=False):
         * annualize: return annualize sharpe?
         * smart: return smart sharpe ratio
     """
-    return cagr(returns, periods=periods) / -max_drawdown(returns)
+    return cagr(returns) / -max_drawdown(returns)
