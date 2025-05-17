@@ -490,10 +490,11 @@ def plot_histogram(
         if len(returns.columns) > 1:
             alpha = 0.5
 
+    fix_instance = lambda x: x[x.columns[0]] if isinstance(x, _pd.DataFrame) else x
     if benchmark is not None:
         if isinstance(returns, _pd.Series):
             combined_returns = (
-                benchmark.to_frame()
+                fix_instance(benchmark).to_frame()
                 .join(returns.to_frame())
                 .stack()
                 .reset_index()
@@ -501,7 +502,7 @@ def plot_histogram(
             )
         elif isinstance(returns, _pd.DataFrame):
             combined_returns = (
-                benchmark.to_frame()
+                fix_instance(benchmark).to_frame()
                 .join(returns)
                 .stack()
                 .reset_index()
