@@ -39,7 +39,7 @@ This forked version is created and maintained by the Lumiwealth team. We are a t
 
 If you're interested in learning how to make your own trading algorithms, check out our Lumibot library at https://github.com/Lumiwealth/lumibot and check out our courses at https://lumiwealth.com
 
-QuantStats: Portfolio analytics for quants
+QuantStats (Lumiwealth Version): Portfolio analytics for quants
 ==========================================
 
 **QuantStats** Python library that performs portfolio profiling, allowing quants and portfolio managers to understand their performance better by providing them with in-depth analytics and risk metrics.
