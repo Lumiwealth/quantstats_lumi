@@ -1,7 +1,8 @@
 # Include the license file
 include LICENSE.txt
 include requirements.txt
-include quantstats/report.html
+include quantstats_lumi/report.html
+include README.md
 
 # Include the data files
 recursive-include data *

@@ -24,7 +24,7 @@ with open("quantstats_lumi/version.py") as f:
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with io.open(path.join(here, "README.rst"), encoding="utf-8") as f:
+with io.open(path.join(here, "README.md"), encoding="utf-8") as f:  # Changed from README.rst
     long_description = f.read()
 
 with io.open(path.join(here, "requirements.txt"), encoding="utf-8") as f:
@@ -35,10 +35,12 @@ setup(
     version=version,
     description="Portfolio analytics for quants",
     long_description=long_description,
+    long_description_content_type="text/markdown",  # Changed from text/x-rst
     url="https://github.com/Lumiwealth/quantstats_lumi",
     author="Robert Grzesik (Lumiwealth)",
     author_email="rob@lumiwealth.com",
     license="Apache Software License",
+    python_requires='>=3.6',
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         # 'Development Status :: 1 - Planning',
