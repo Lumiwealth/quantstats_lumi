@@ -14,24 +14,26 @@
     :target: https://pypi.python.org/pypi/quantstats
     :alt: PyPi downloads
 
-.. image:: https://www.codefactor.io/repository/github/ranaroussi/quantstats/badge
-    :target: https://www.codefactor.io/repository/github/ranaroussi/quantstats
+.. image:: https://www.codefactor.io/repository/github/Lumiwealth/quantstats_lumi/badge
+    :target: https://www.codefactor.io/repository/github/Lumiwealth/quantstats_lumi
     :alt: CodeFactor
 
-.. image:: https://img.shields.io/github/stars/ranaroussi/quantstats.svg?style=social&label=Star&maxAge=60
-    :target: https://github.com/ranaroussi/quantstats
+.. image:: https://img.shields.io/github/stars/Lumiwealth/quantstats_lumi.svg?style=social&label=Star&maxAge=60
+    :target: https://github.com/Lumiwealth/quantstats_lumi
     :alt: Star this repo
 
-.. image:: https://img.shields.io/twitter/follow/aroussi.svg?style=social&label=Follow&maxAge=60
-    :target: https://twitter.com/aroussi
-    :alt: Follow me on twitter
+.. image:: https://img.shields.io/twitter/follow/botspottrade.svg?style=social&label=Follow&maxAge=60
+    :target: https://twitter.com/botspottrade
+    :alt: Follow BotSpot on twitter
 
 \
 
-Fork of Original QuantStats by Ran Aroussi
-==========================================
+Fork of Original QuantStats by Ran Aroussi, Maintained by Lumiwealth BotSpot
+===========================================================================
 
 This is a forked version of the original QuantStats library by Ran Aroussi. The original library can be found at https://github.com/ranaroussi/quantstats
+
+This forked version is maintained by **Lumiwealth BotSpot**. For more information, visit https://github.com/Lumiwealth/quantstats_lumi or https://botspot.trade.
 
 This forked version was created because it seems that the original library is no longer being maintained. The original library has a number of issues and pull requests that have been open for a long time and have not been addressed. This forked version aims to address some of these issues and pull requests.
 
@@ -39,10 +41,10 @@ This forked version is created and maintained by the Lumiwealth team. We are a t
 
 If you're interested in learning how to make your own trading algorithms, check out our Lumibot library at https://github.com/Lumiwealth/lumibot and check out our courses at https://lumiwealth.com
 
-QuantStats (Lumiwealth Version): Portfolio analytics for quants
-==========================================
+QuantStats Lumi: Portfolio analytics for quants
+===============================================
 
-**QuantStats** Python library that performs portfolio profiling, allowing quants and portfolio managers to understand their performance better by providing them with in-depth analytics and risk metrics.
+**QuantStats Lumi** is a Python library that performs portfolio profiling, allowing quants and portfolio managers to understand their performance better by providing them with in-depth analytics and risk metrics.
 
 `Changelog » <./CHANGELOG.rst>`__
 
@@ -275,12 +277,13 @@ Questions?
 ----------
 
 This is a new library... If you find a bug, please
-`open an issue <https://github.com/ranaroussi/quantstats/issues>`_
+`open an issue <https://github.com/Lumiwealth/quantstats_lumi/issues>`_
 in this repository.
 
 If you'd like to contribute, a great place to look is the
-`issues marked with help-wanted <https://github.com/ranaroussi/quantstats/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22>`_.
+`issues marked with help-wanted <https://github.com/Lumiwealth/quantstats_lumi/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22>`_.
 
+For more information about Lumiwealth BotSpot, visit https://botspot.trade.
 
 Known Issues
 ------------
@@ -292,12 +295,24 @@ monthly returns heatmap when instructed to save - so even if you save the plot (
 Legal Stuff
 ------------
 
-**QuantStats** is distributed under the **Apache Software License**. See the `LICENSE.txt <./LICENSE.txt>`_ file in the release for details.
+**QuantStats Lumi** is distributed under the **Apache Software License**. See the `LICENSE.txt <./LICENSE.txt>`_ file in the release for details.
 
+Testing
+-------
+
+To run the test suite, make sure you have `pytest` installed, then run:
+
+.. code:: bash
+
+    pytest
+
+This will automatically discover and run all tests in the repository.
 
 P.S.
 ------------
 
-Please drop me a note with any feedback you have.
+Please drop us a note with any feedback you have.
 
-**Ran Aroussi**
+**Lumiwealth BotSpot**
+https://github.com/Lumiwealth/quantstats_lumi
+https://botspot.trade

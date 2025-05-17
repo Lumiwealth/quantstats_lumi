@@ -2,9 +2,10 @@ import pandas as pd
 import quantstats_lumi.reports as reports
 import os
 
-# Create a simple returns series with a DatetimeIndex
-index = pd.date_range(start='2022-01-01', periods=5, freq='M')
-returns = pd.Series([0.02, -0.02, 0.03, -0.01, 0.02], index=index)
+# Create a returns series with a DatetimeIndex covering over a year (24 months)
+index = pd.date_range(start='2022-01-31', periods=24, freq='ME')
+returns = pd.Series([0.02, -0.02, -0.03, -0.01, 0.02, 0.01, -0.01, 0.015, 0.01, -0.005, 0.02, 0.01,
+                     0.015, -0.01, 0.02, -0.01, -0.01, 0.02, 0.01, -0.01, 0.015, 0.01, -0.005, 0.02], index=index)
 
 # Specify the output file path
 output_file_path = "report.html"
@@ -32,8 +33,8 @@ example_parameters = {
     "take_profit_trailing_stop": 0.02,  # The trailing stop to use for the take profit, after the take profit target is hit, set to None to not use this feature
 }
 
-# Generate the HTML report
-html_result = reports.html(returns, output=output_file_path, parameters=example_parameters)
+# Generate the HTML report for monthly data (periods_per_year=12)
+html_result = reports.html(returns, output=output_file_path, parameters=example_parameters, periods_per_year=12)
 
 # Print the HTML result
 print(html_result)

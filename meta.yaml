@@ -1,5 +1,5 @@
 {% set name = "QuantStats Lumi" %}
-{% set version = "0.0.35" %}
+{% set version = "1.0" %}
 
 package:
   name: "{{ name|lower }}"
@@ -26,6 +26,7 @@ requirements:
     - pip
     - python
     - scipy >=1.2.0
+    - pytest
   run:
     - pandas >=0.24.0
     - numpy >=1.16.5
@@ -37,6 +38,7 @@ requirements:
     - pip
     - python
     - scipy >=1.2.0
+    - pytest
 
 test:
   imports:
@@ -44,21 +46,22 @@ test:
     - quantstats._plotting
 
 about:
-  home: "https://github.com/ranaroussi/quantstats"
+  home: "https://github.com/Lumiwealth/quantstats_lumi"
   license: "Apache Software"
   license_family: "APACHE"
   license_file: ""
-  summary: "QuantStats: Portfolio analytics for quants"
+  summary: "QuantStats Lumi: Portfolio analytics for quants"
   description: |
-    QuantStats Python library that performs portfolio profiling,
+    QuantStats Lumi is a Python library that performs portfolio profiling,
     allowing quants and portfolio managers to understand their
     performance better by providing them with in-depth analytics
     and risk metrics.
-  doc_url: "https://github.com/ranaroussi/quantstats"
-  dev_url: "https://pypi.python.org/pypi/quantstats"
-  doc_source_url: https://github.com/ranaroussi/quantstats/blob/master/README.rst
+    Forked and maintained by Lumiwealth BotSpot.
+  doc_url: "https://github.com/Lumiwealth/quantstats_lumi"
+  dev_url: "https://github.com/Lumiwealth/quantstats_lumi"
+  doc_source_url: "https://github.com/Lumiwealth/quantstats_lumi/blob/master/README.rst"
 
 
 extra:
   recipe-maintainers:
-    - ranaroussi
+    - lumiwealth-botspot

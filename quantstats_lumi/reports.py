@@ -227,20 +227,37 @@ def html(
 
     # CAGR #
     cagr_value = mtrx.loc["CAGR% (Annual Return)", strategy_title]
-    tpl = tpl.replace("{{cagr}}", str(cagr_value))
+    # Ensure CAGR is formatted as a percentage string with 2 decimals
+    if isinstance(cagr_value, float):
+        cagr_str = f"{cagr_value:.2f}%"
+    else:
+        cagr_str = str(cagr_value)
+    tpl = tpl.replace("{{cagr}}", cagr_str)
 
     # Total Return #
     total_return_value = mtrx.loc["Total Return", strategy_title]
-    tpl = tpl.replace("{{total_return}}", str(total_return_value))
-
+    # Ensure Total Return is formatted as a percentage string with 2 decimals
+    if isinstance(total_return_value, float):
+        total_return_str = f"{total_return_value:.2f}%"
+    else:
+        total_return_str = str(total_return_value)
+    tpl = tpl.replace("{{total_return}}", total_return_str)
 
     # Max Drawdown #
     max_drawdown_value = mtrx.loc["Max Drawdown", strategy_title]
-    tpl = tpl.replace("{{max_drawdown}}", str(max_drawdown_value))
+    if isinstance(max_drawdown_value, float):
+        max_drawdown_str = f"{max_drawdown_value:.2f}%"
+    else:
+        max_drawdown_str = str(max_drawdown_value)
+    tpl = tpl.replace("{{max_drawdown}}", max_drawdown_str)
 
     # RoMaD #
     romad_value = mtrx.loc["RoMaD", strategy_title]
-    tpl = tpl.replace("{{romad}}", str(romad_value))
+    if isinstance(romad_value, float):
+        romad_str = f"{romad_value:.2f}"
+    else:
+        romad_str = str(romad_value)
+    tpl = tpl.replace("{{romad}}", romad_str)
 
     # Longest Drawdown Duration #
     longest_dd_days_value = mtrx.loc["Longest DD Days", strategy_title]
@@ -248,11 +265,19 @@ def html(
 
     # Sharpe #
     sharpe_value = mtrx.loc["Sharpe", strategy_title]
-    tpl = tpl.replace("{{sharpe}}", str(sharpe_value))
+    if isinstance(sharpe_value, float):
+        sharpe_str = f"{sharpe_value:.2f}"
+    else:
+        sharpe_str = str(sharpe_value)
+    tpl = tpl.replace("{{sharpe}}", sharpe_str)
 
     # Sortino #
     sortino_value = mtrx.loc["Sortino", strategy_title]
-    tpl = tpl.replace("{{sortino}}", str(sortino_value))
+    if isinstance(sortino_value, float):
+        sortino_str = f"{sortino_value:.2f}"
+    else:
+        sortino_str = str(sortino_value)
+    tpl = tpl.replace("{{sortino}}", sortino_str)
 
 
     if isinstance(returns, _pd.DataFrame):
@@ -1259,7 +1284,7 @@ def metrics(
                     [
                         str(round(df["benchmark"].corr(df[strategy_col]) * pct, 2))
                         + "%"
-                        for strategy_col in df_strategy_columns
+                        for strategy_col in strategy_colname
                     ]
                 ) + ["-"]
                 metrics["Treynor Ratio"] = (
@@ -1274,7 +1299,7 @@ def metrics(
                             )
                         )
                         + "%"
-                        for strategy_col in df_strategy_columns
+                        for strategy_col in strategy_colname
                     ]
                 ) + ["-"]
 

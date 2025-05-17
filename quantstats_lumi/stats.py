@@ -584,25 +584,78 @@ def gain_to_pain_ratio(returns, rf=0, resolution="D"):
 
 def cagr(returns, rf=0.0, compounded=True, periods=365):
     """
-    Calculates the communicative annualized growth return
-    (CAGR%) of access returns
+    Calculates the communicative annualized growth return (CAGR) of access returns.
+    The number of years is based on the actual calendar period covered by the returns.
 
-    If rf is non-zero, you must specify periods.
-    In this case, rf is assumed to be expressed in yearly (annualized) terms
+    Args:
+        returns: Series or DataFrame of returns
+        rf: risk-free rate (ignored here)
+        compounded: use compounded returns (default True)
+        periods: (ignored for 'years' calculation in CAGR, kept for API compatibility with other metrics) 
+                 Actual years are derived from the returns' index.
+
+    Returns:
+        CAGR as a float (e.g., 0.132 for 13.2%)
     """
-    total = _utils._prepare_returns(returns, rf)
-    if compounded:
-        total = comp(total)
+    if not isinstance(returns, (_pd.Series, _pd.DataFrame)) or returns.empty:
+        return _np.nan
+
+    # Drop NaNs and get index
+    if isinstance(returns, _pd.DataFrame):
+        returns = returns.sort_index()
+        idx = returns.dropna(how="all").index
     else:
-        total = _np.sum(total, axis=0)
+        returns = returns.sort_index()
+        idx = returns.dropna().index
+    if len(idx) < 2:
+        return _np.nan
 
-    years = (returns.index[-1] - returns.index[0]).days / periods
+    # Use total_seconds for accurate fractional years (works for both daily and intraday)
+    delta = idx[-1] - idx[0]
+    years = delta.total_seconds() / (365.25 * 24 * 60 * 60)
+    if years <= 0:
+        return _np.nan
 
-    res = abs(total + 1.0) ** (1.0 / years) - 1
+    if compounded:
+        if isinstance(returns, _pd.DataFrame):
+            numeric_returns = returns.select_dtypes(include=[_np.number])
+            if numeric_returns.empty:
+                return _np.nan if numeric_returns.shape[1] == 0 else _pd.Series([_np.nan] * numeric_returns.shape[1], index=numeric_returns.columns)
+            valid = numeric_returns.loc[idx[0]:idx[-1]]
+            total_return_factor = (valid + 1).prod()
+            res = total_return_factor ** (1.0 / years) - 1
+        else:
+            if not _pd.api.types.is_numeric_dtype(returns):
+                return _np.nan
+            valid = returns.loc[idx[0]:idx[-1]]
+            total_return_factor = (valid + 1).prod()
+            res = total_return_factor ** (1.0 / years) - 1
+    else:
+        total = _utils._prepare_returns(returns, rf)
+        total = total.sort_index()
+        idx2 = total.dropna().index
+        if len(idx2) < 2:
+            return _np.nan
+        delta2 = idx2[-1] - idx2[0]
+        current_years = delta2.total_seconds() / (365.25 * 24 * 60 * 60)
+        if current_years <= 0:
+            return _np.nan
+        if isinstance(total, _pd.DataFrame):
+            total_return = total.loc[idx2[0]:idx2[-1]].sum(axis=0)
+        else:
+            total_return = total.loc[idx2[0]:idx2[-1]].sum()
+        res = (total_return + 1.0) ** (1.0 / current_years) - 1
 
     if isinstance(returns, _pd.DataFrame):
-        res = _pd.Series(res)
-        res.index = returns.columns
+        if not isinstance(res, _pd.Series):
+            if _np.isscalar(res) and 'numeric_returns' in locals() and not numeric_returns.empty:
+                res = _pd.Series([res] * len(numeric_returns.columns), index=numeric_returns.columns)
+            elif 'numeric_returns' in locals() and not numeric_returns.empty:
+                res = _pd.Series(res, index=numeric_returns.columns)
+            else:
+                res = _pd.Series(res, index=returns.columns if not isinstance(res, _pd.Series) else res.index)
+        elif 'numeric_returns' in locals() and not numeric_returns.empty:
+            res.index = numeric_returns.columns
 
     return res
 
