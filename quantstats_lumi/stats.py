@@ -967,6 +967,9 @@ def r_squared(returns, benchmark, prepare_returns=True):
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
 
+    # if all values are identical, return 0 to avoid errors
+    if len(_np.unique(_np.array(returns))) == 1:
+        return 0
     # Check if all returns index x values are identical to prevent the error ValueError: Cannot calculate a linear regression if all x values are identical
     if len(_np.unique(_np.array(returns.index))) == 1:
         return 0

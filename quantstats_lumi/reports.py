@@ -51,10 +51,8 @@ def _get_trading_periods(periods_per_year=365):
 
 def _match_dates(returns, benchmark):
     """match dates of returns and benchmark"""
-    if isinstance(returns, _pd.DataFrame):
-        loc = max(returns[returns.columns[0]].ne(0).idxmax(), benchmark.ne(0).idxmax())
-    else:
-        loc = max(returns.ne(0).idxmax(), benchmark.ne(0).idxmax())
+    fix_instance = lambda x: x[x.columns[0]] if isinstance(x, _pd.DataFrame) else x
+    loc = max(fix_instance(returns).ne(0).idxmax(), fix_instance(benchmark).ne(0).idxmax())
     returns = returns.loc[loc:]
     benchmark = benchmark.loc[loc:]
 
@@ -161,6 +159,34 @@ def html(
     else:
         benchmark_title = None
 
+    # Assign names/columns after all preparations and matching
+    if benchmark is not None:
+        benchmark.name = benchmark_title
+    if isinstance(returns, _pd.Series):
+        returns.name = strategy_title
+    elif isinstance(returns, _pd.DataFrame):
+        returns.columns = strategy_title
+
+    # Check for no trades condition
+    no_trades_occurred = False
+    if returns.empty:
+        no_trades_occurred = True
+    else:
+        sum_abs_returns = 0.0
+        if isinstance(returns, _pd.Series):
+            # Assuming returns is numeric after _prepare_returns
+            sum_abs_returns = returns.abs().sum()
+        elif isinstance(returns, _pd.DataFrame):
+            # Assuming returns DataFrame columns are numeric after _prepare_returns
+            sum_abs_returns = returns.select_dtypes(include=[_np.number]).abs().sum().sum()
+        
+        if abs(sum_abs_returns) < 1e-9: # Using a small epsilon for float comparison
+            no_trades_occurred = True
+
+    no_trades_html_message = ""
+    if no_trades_occurred:
+        no_trades_html_message = "<div style='text-align: center; padding: 10px; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: .25rem; margin-bottom: 1rem;'><strong>Note:</strong> No trades or significant activity occurred during this period. Metrics shown below may reflect this.</div>"
+
     date_range = returns.index.strftime("%e %b, %Y")
     tpl = tpl.replace("{{date_range}}", date_range[0] + " - " + date_range[-1])
     tpl = tpl.replace("{{title}}", title)
@@ -189,52 +215,44 @@ def html(
     )[2:]
 
     mtrx.index.name = "Metric"
-    tpl = tpl.replace("{{metrics}}", _html_table(mtrx))
+    # tpl = tpl.replace("{{metrics}}", _html_table(mtrx)) # Original line
+    
+    # Modified replacement for metrics table
+    metrics_table_html = _html_table(mtrx)
+    # The "no trades" message is no longer prepended here.
+    tpl = tpl.replace("{{metrics}}", metrics_table_html, 1)
 
     # Add all of the summary metrics
+    # Ensure these are cast to str and the no_trades_html_message is NOT with CAGR here.
 
     # CAGR #
-    # Get the value of the "Strategy" column where the "Metric" column is "CAGR% (Annual Return)"
-    cagr = mtrx.loc["CAGR% (Annual Return)", strategy_title]
-    # Add the CAGR to the template
-    tpl = tpl.replace("{{cagr}}", cagr)
+    cagr_value = mtrx.loc["CAGR% (Annual Return)", strategy_title]
+    tpl = tpl.replace("{{cagr}}", str(cagr_value))
 
     # Total Return #
-    # Get the value of the "Strategy" column where the "Metric" column is "Total Return"
-    total_return = mtrx.loc["Total Return", strategy_title]
-    # Add the total return to the template
-    tpl = tpl.replace("{{total_return}}", total_return)
+    total_return_value = mtrx.loc["Total Return", strategy_title]
+    tpl = tpl.replace("{{total_return}}", str(total_return_value))
 
 
     # Max Drawdown #
-    # Get the value of the "Strategy" column where the "Mteric" column is "Max Drawdown"
-    max_drawdown = mtrx.loc["Max Drawdown", strategy_title]
-    # Add the max drawdown to the template
-    tpl = tpl.replace("{{max_drawdown}}", max_drawdown)
+    max_drawdown_value = mtrx.loc["Max Drawdown", strategy_title]
+    tpl = tpl.replace("{{max_drawdown}}", str(max_drawdown_value))
 
     # RoMaD #
-    # Get the value of the "Strategy" column where the "Mteric" column is "RoMaD"
-    romad = mtrx.loc["RoMaD", strategy_title]
-    # Add the RoMaD to the template
-    tpl = tpl.replace("{{romad}}", romad)
+    romad_value = mtrx.loc["RoMaD", strategy_title]
+    tpl = tpl.replace("{{romad}}", str(romad_value))
 
     # Longest Drawdown Duration #
-    # Get the value of the "Strategy" column where the "Mteric" column is "Longest Drawdown Duration"
-    longest_dd_days = mtrx.loc["Longest DD Days", strategy_title]
-    # Add the longest drawdown duration to the template
-    tpl = tpl.replace("{{longest_dd_days}}", longest_dd_days)
+    longest_dd_days_value = mtrx.loc["Longest DD Days", strategy_title]
+    tpl = tpl.replace("{{longest_dd_days}}", str(longest_dd_days_value))
 
     # Sharpe #
-    # Get the value of the "Strategy" column where the "Metric" column is "Sharpe"
-    sharpe = mtrx.loc["Sharpe", strategy_title]
-    # Add the Sharpe to the template
-    tpl = tpl.replace("{{sharpe}}", sharpe)
+    sharpe_value = mtrx.loc["Sharpe", strategy_title]
+    tpl = tpl.replace("{{sharpe}}", str(sharpe_value))
 
     # Sortino #
-    # Get the value of the "Strategy" column where the "Metric" column is "Sortino"
-    sortino = mtrx.loc["Sortino", strategy_title]
-    # Add the Sharpe to the template
-    tpl = tpl.replace("{{sortino}}", sortino)
+    sortino_value = mtrx.loc["Sortino", strategy_title]
+    tpl = tpl.replace("{{sortino}}", str(sortino_value))
 
 
     if isinstance(returns, _pd.DataFrame):
@@ -329,7 +347,13 @@ def html(
         cumulative=compounded,
         prepare_returns=False,
     )
-    tpl = tpl.replace(placeholder_returns, _embed_figure(figfile, figfmt))
+    first_plot_html = _embed_figure(figfile, figfmt) # Get the HTML for the first plot
+
+    # Prepend the no_trades_html_message if no trades occurred, then add the plot
+    if no_trades_occurred:
+        tpl = tpl.replace(placeholder_returns, no_trades_html_message + first_plot_html, 1)
+    else:
+        tpl = tpl.replace(placeholder_returns, first_plot_html, 1)
 
     if benchmark is not None and show_match_volatility:
         figfile = _utils._file_stream()

@@ -360,6 +360,16 @@ def plot_timeseries(
     if benchmark is not None:
         min_val = min(min_val, benchmark.min())
         max_val = max(max_val, benchmark.max())
+
+    # Handle cases where min_val or max_val might be NaN or Inf
+    if not _np.isfinite(min_val) or not _np.isfinite(max_val) or min_val == max_val:
+        min_val = -1  # Default min value
+        max_val = 1   # Default max value
+        # if using percent, adjust defaults
+        if percent:
+            min_val = -0.01
+            max_val = 0.01
+
     ax.set_ylim(bottom=min_val, top=max_val)
 
     if percent:
@@ -480,10 +490,11 @@ def plot_histogram(
         if len(returns.columns) > 1:
             alpha = 0.5
 
+    fix_instance = lambda x: x[x.columns[0]] if isinstance(x, _pd.DataFrame) else x
     if benchmark is not None:
         if isinstance(returns, _pd.Series):
             combined_returns = (
-                benchmark.to_frame()
+                fix_instance(benchmark).to_frame()
                 .join(returns.to_frame())
                 .stack()
                 .reset_index()
@@ -491,7 +502,7 @@ def plot_histogram(
             )
         elif isinstance(returns, _pd.DataFrame):
             combined_returns = (
-                benchmark.to_frame()
+                fix_instance(benchmark).to_frame()
                 .join(returns)
                 .stack()
                 .reset_index()
