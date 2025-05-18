@@ -123,7 +123,7 @@ def html(
     win_year, win_half_year = _get_trading_periods(periods_per_year)
 
     tpl = ""
-    with open(template_path or __file__[:-4] + ".html") as f:
+    with open(template_path or __file__[:-4] + ".html", encoding='utf-8') as f:
         tpl = f.read()
         f.close()
 
