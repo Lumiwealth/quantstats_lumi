@@ -370,8 +370,18 @@ def plot_timeseries(
         max_val = returns.max().max()
 
     if benchmark is not None:
-        min_val = min(min_val, benchmark.min())
-        max_val = max(max_val, benchmark.max())
+        bench_min = min_val
+        bench_max = max_val
+
+        if isinstance(benchmark, _pd.Series):
+            bench_min = benchmark.min()
+            bench_max = benchmark.max()
+        if isinstance(benchmark, _pd.DataFrame):
+            bench_min = benchmark.min().min()
+            bench_max = benchmark.max().max()
+
+        min_val = min(min_val, bench_min)
+        max_val = max(max_val, bench_max)
 
     # Handle cases where min_val or max_val might be NaN or Inf
     if not _np.isfinite(min_val) or not _np.isfinite(max_val) or min_val == max_val:
