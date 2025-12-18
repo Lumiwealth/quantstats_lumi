@@ -1,6 +1,10 @@
 Change Log
 ===========
 
+1.0.2
+-----
+- Added comprehensive dark mode support for tear sheets. Can be enabled via `dark_mode=True` parameter
+
 0.0.62
 ------
 - Changed `serenity_index` and `recovery_factor` to use simple sum instead of compounded sum
