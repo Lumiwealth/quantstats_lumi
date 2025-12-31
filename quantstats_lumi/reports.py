@@ -75,6 +75,7 @@ def html(
     parameters: dict = None,
     log_scale: bool = False,
     show_match_volatility: bool = True,
+    show_log_returns=None,
     **kwargs,
 ):
     """
@@ -355,12 +356,17 @@ def html(
         tpl = tpl.replace("{{dd_info}}", dd_html_table)
 
     active = kwargs.get("active_returns", False)
-    # plots
-    plot_returns = _plots.log_returns if log_scale else _plots.returns
-    placeholder_returns = "{{log_returns}}" if log_scale else "{{returns}}"
+
+    # Backwards-compatible switch:
+    # - Historically the second chart was "Volatility Matched" (match_volatility=True).
+    # - We now prefer a log-scale cumulative chart instead (more interpretable).
+    # - If the caller does not specify show_log_returns, inherit the old flag so existing
+    #   calls still get a second chart by default.
+    if show_log_returns is None:
+        show_log_returns = show_match_volatility
 
     figfile = _utils._file_stream()
-    plot_returns(
+    _plots.returns(
         returns,
         benchmark,
         grayscale=grayscale,
@@ -374,18 +380,19 @@ def html(
     )
     first_plot_html = _embed_figure(figfile, figfmt) # Get the HTML for the first plot
 
-    # Prepend the no_trades_html_message if no trades occurred, then add the plot
-    if no_trades_occurred:
-        tpl = tpl.replace(placeholder_returns, no_trades_html_message + first_plot_html, 1)
-    else:
-        tpl = tpl.replace(placeholder_returns, first_plot_html, 1)
+    # Prepend the no_trades_html_message if no trades occurred, then add the plot.
+    tpl = tpl.replace(
+        "{{returns}}",
+        (no_trades_html_message + first_plot_html) if no_trades_occurred else first_plot_html,
+        1,
+    )
 
-    if benchmark is not None and show_match_volatility:
+    # Replace the legacy "Volatility Matched" chart with a log-scale cumulative chart.
+    if show_log_returns:
         figfile = _utils._file_stream()
-        plot_returns(
+        _plots.log_returns(
             returns,
             benchmark,
-            match_volatility=True,
             grayscale=grayscale,
             figsize=(8, 5),
             subtitle=False,
@@ -395,7 +402,12 @@ def html(
             cumulative=compounded,
             prepare_returns=False,
         )
-        tpl = tpl.replace("{{vol_returns}}", _embed_figure(figfile, figfmt))
+        tpl = tpl.replace("{{log_returns}}", _embed_figure(figfile, figfmt))
+    else:
+        tpl = tpl.replace("{{log_returns}}", "")
+
+    # Ensure the removed legacy placeholder does not leak into HTML if present in a custom template.
+    tpl = tpl.replace("{{vol_returns}}", "")
 
     figfile = _utils._file_stream()
     _plots.yearly_returns(
