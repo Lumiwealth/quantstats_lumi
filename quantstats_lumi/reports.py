@@ -59,6 +59,19 @@ def _match_dates(returns, benchmark):
     return returns, benchmark
 
 
+def _format_duration_seconds(seconds) -> str:
+    try:
+        seconds_int = max(0, int(round(float(seconds))))
+    except Exception:
+        return "unknown"
+
+    hours, remainder = divmod(seconds_int, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        return f"{hours:d}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes:d}:{seconds:02d}"
+
+
 def html(
     returns,
     benchmark: _pd.Series = None,
@@ -75,6 +88,11 @@ def html(
     parameters: dict = None,
     log_scale: bool = False,
     show_match_volatility: bool = True,
+    show_log_returns=None,
+    lumibot_version=None,
+    backtesting_data_source=None,
+    backtesting_data_sources=None,
+    backtest_time_seconds=None,
     **kwargs,
 ):
     """
@@ -108,6 +126,14 @@ def html(
         Match dates of returns and benchmark, default is True
     parameters : dict, optional
         Strategy parameters
+    lumibot_version : str, optional
+        Optional metadata shown in the report header.
+    backtesting_data_source : str, optional
+        Optional metadata shown in the report header.
+    backtesting_data_sources : str, optional
+        Optional metadata shown in the report header.
+    backtest_time_seconds : float, optional
+        Optional metadata shown in the report header (elapsed seconds).
 
     Returns
     -------
@@ -150,8 +176,36 @@ def html(
             elif isinstance(benchmark, _pd.DataFrame):
                 benchmark_title = benchmark[benchmark.columns[0]].name
 
+        meta_parts = []
+
+        if lumibot_version is None:
+            lumibot_version = kwargs.get("lumibot_version")
+        if lumibot_version:
+            meta_parts.append(f"LumiBot {lumibot_version}")
+
+        if backtesting_data_sources is None and backtesting_data_source is None:
+            backtesting_data_sources = kwargs.get("backtesting_data_sources")
+            backtesting_data_source = kwargs.get("backtesting_data_source")
+        backtesting_data_sources = backtesting_data_sources or backtesting_data_source
+        if backtesting_data_sources:
+            meta_parts.append(f"DataSource {backtesting_data_sources}")
+
+        if backtest_time_seconds is None:
+            backtest_time_seconds = kwargs.get("backtest_time_seconds")
+        if backtest_time_seconds is not None:
+            try:
+                meta_parts.append(
+                    f"Backtest time {_format_duration_seconds(backtest_time_seconds)}"
+                )
+            except Exception:
+                pass
+
+        meta_text = ""
+        if meta_parts:
+            meta_text = " | " + " | ".join(meta_parts)
+
         tpl = tpl.replace(
-            "{{benchmark_title}}", f"Benchmark is {benchmark_title.upper()} | "
+            "{{benchmark_title}}", f"Benchmark is {benchmark_title.upper()}{meta_text} | "
         )
         benchmark = _utils._prepare_benchmark(benchmark, returns.index, rf)
         if match_dates is True:
@@ -355,12 +409,17 @@ def html(
         tpl = tpl.replace("{{dd_info}}", dd_html_table)
 
     active = kwargs.get("active_returns", False)
-    # plots
-    plot_returns = _plots.log_returns if log_scale else _plots.returns
-    placeholder_returns = "{{log_returns}}" if log_scale else "{{returns}}"
+
+    # Backwards-compatible switch:
+    # - Historically the second chart was "Volatility Matched" (match_volatility=True).
+    # - We now prefer a log-scale cumulative chart instead (more interpretable).
+    # - If the caller does not specify show_log_returns, inherit the old flag so existing
+    #   calls still get a second chart by default.
+    if show_log_returns is None:
+        show_log_returns = show_match_volatility
 
     figfile = _utils._file_stream()
-    plot_returns(
+    _plots.returns(
         returns,
         benchmark,
         grayscale=grayscale,
@@ -374,18 +433,19 @@ def html(
     )
     first_plot_html = _embed_figure(figfile, figfmt) # Get the HTML for the first plot
 
-    # Prepend the no_trades_html_message if no trades occurred, then add the plot
-    if no_trades_occurred:
-        tpl = tpl.replace(placeholder_returns, no_trades_html_message + first_plot_html, 1)
-    else:
-        tpl = tpl.replace(placeholder_returns, first_plot_html, 1)
+    # Prepend the no_trades_html_message if no trades occurred, then add the plot.
+    tpl = tpl.replace(
+        "{{returns}}",
+        (no_trades_html_message + first_plot_html) if no_trades_occurred else first_plot_html,
+        1,
+    )
 
-    if benchmark is not None and show_match_volatility:
+    # Replace the legacy "Volatility Matched" chart with a log-scale cumulative chart.
+    if show_log_returns:
         figfile = _utils._file_stream()
-        plot_returns(
+        _plots.log_returns(
             returns,
             benchmark,
-            match_volatility=True,
             grayscale=grayscale,
             figsize=(8, 5),
             subtitle=False,
@@ -395,7 +455,12 @@ def html(
             cumulative=compounded,
             prepare_returns=False,
         )
-        tpl = tpl.replace("{{vol_returns}}", _embed_figure(figfile, figfmt))
+        tpl = tpl.replace("{{log_returns}}", _embed_figure(figfile, figfmt))
+    else:
+        tpl = tpl.replace("{{log_returns}}", "")
+
+    # Ensure the removed legacy placeholder does not leak into HTML if present in a custom template.
+    tpl = tpl.replace("{{vol_returns}}", "")
 
     figfile = _utils._file_stream()
     _plots.yearly_returns(
