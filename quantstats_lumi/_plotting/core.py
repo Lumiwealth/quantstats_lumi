@@ -24,7 +24,7 @@ try:
     _plt.rcParams["font.family"] = "Arial"
 except Exception:
     pass
-
+from typing import Optional, Union
 import matplotlib.dates as _mdates
 import numpy as _np
 import pandas as _pd
@@ -235,8 +235,8 @@ def plot_returns_bars(
 
 
 def plot_timeseries(
-        returns,
-        benchmark=None,
+        returns:Union[_pd.Series,_pd.DataFrame],
+        benchmark:Optional[_pd.Series]=None,
         title="Returns",
         compound=False,
         cumulative=True,
@@ -259,10 +259,15 @@ def plot_timeseries(
         savefig=None,
         show=True,
 ):
+    if isinstance(returns, (_pd.Series,_pd.DataFrame)) is False:
+        raise ValueError(f"returns must be a pandas Series or DataFrame, got {type(returns)}")
+    if benchmark is not None and isinstance(benchmark, _pd.Series) is False:
+        raise ValueError(f"benchmark must be None or pandas Series, got {type(benchmark)}")
+
     colors, ls, alpha = _get_colors(grayscale)
 
     returns.fillna(0, inplace=True)
-    if isinstance(benchmark, _pd.Series):
+    if benchmark is not None:
         benchmark.fillna(0, inplace=True)
 
     if match_volatility and benchmark is None:
@@ -275,17 +280,17 @@ def plot_timeseries(
     if compound is True:
         if cumulative:
             returns = _stats.compsum(returns)
-            if isinstance(benchmark, _pd.Series):
+            if benchmark is not None:
                 benchmark = _stats.compsum(benchmark)
         else:
             returns = returns.cumsum()
-            if isinstance(benchmark, _pd.Series):
+            if benchmark is not None:
                 benchmark = benchmark.cumsum()
 
     if resample:
         returns = returns.resample(resample)
         returns = returns.last() if compound is True else returns.sum()
-        if isinstance(benchmark, _pd.Series):
+        if benchmark is not None:
             benchmark = benchmark.resample(resample)
             benchmark = benchmark.last() if compound is True else benchmark.sum()
     # ---------------
@@ -314,7 +319,7 @@ def plot_timeseries(
     fig.set_facecolor("white")
     ax.set_facecolor("white")
 
-    if isinstance(benchmark, _pd.Series):
+    if benchmark is not None:
         ax.plot(benchmark, lw=lw, ls=ls, label=benchmark.name, color=colors[0])
 
     alpha = 0.25 if grayscale else 1
@@ -355,8 +360,12 @@ def plot_timeseries(
     _plt.yscale("symlog" if log_scale else "linear")
 
     # Set y-axis limits to avoid blank space at the bottom and top
+
     min_val = returns.min()
     max_val = returns.max()
+    if isinstance(returns, _pd.DataFrame):
+        min_val = min_val.min()
+        max_val = max_val.max()
     if benchmark is not None:
         min_val = min(min_val, benchmark.min())
         max_val = max(max_val, benchmark.max())
