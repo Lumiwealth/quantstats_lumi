@@ -62,7 +62,7 @@ def multi_shift(df, shift=3):
     dfs = [df.shift(i) for i in _np.arange(shift)]
     for ix, dfi in enumerate(dfs[1:]):
         dfs[ix + 1].columns = [str(col) for col in dfi.columns + str(ix + 1)]
-    return _pd.concat(dfs, 1, sort=True)
+    return _pd.concat(dfs, axis=1, sort=True)
 
 
 def to_returns(prices, rf=0.0):

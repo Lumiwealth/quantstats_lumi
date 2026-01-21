@@ -354,12 +354,34 @@ def plot_timeseries(
 
     _plt.yscale("symlog" if log_scale else "linear")
 
+
     # Set y-axis limits to avoid blank space at the bottom and top
-    min_val = returns.min()
-    max_val = returns.max()
+    # At this stage returns are a frame!
+    min_val = -1
+    max_val = +1
+
+    if isinstance(returns, _pd.Series):
+        # todo: this case can not be used. returns is always a frame
+        min_val = returns.min()
+        max_val = returns.max()
+
+    if isinstance(returns, _pd.DataFrame):
+        min_val = returns.min().min()
+        max_val = returns.max().max()
+
     if benchmark is not None:
-        min_val = min(min_val, benchmark.min())
-        max_val = max(max_val, benchmark.max())
+        bench_min = min_val
+        bench_max = max_val
+
+        if isinstance(benchmark, _pd.Series):
+            bench_min = benchmark.min()
+            bench_max = benchmark.max()
+        if isinstance(benchmark, _pd.DataFrame):
+            bench_min = benchmark.min().min()
+            bench_max = benchmark.max().max()
+
+        min_val = min(min_val, bench_min)
+        max_val = max(max_val, bench_max)
 
     # Handle cases where min_val or max_val might be NaN or Inf
     if not _np.isfinite(min_val) or not _np.isfinite(max_val) or min_val == max_val:
