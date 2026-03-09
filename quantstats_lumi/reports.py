@@ -1885,3 +1885,270 @@ def _embed_figure(figfiles, figfmt):
         data_uri = _b64encode(figbytes).decode()
         embed_string = '<img src="data:image/{};base64,{}" />'.format(figfmt, data_uri)
     return embed_string
+
+
+def metrics_json(
+    returns,
+    benchmark=None,
+    rf=0.0,
+    compounded=True,
+    periods_per_year=365,
+    prepare_returns=True,
+    match_dates=True,
+    rolling_period=126,
+    output=None,
+    **kwargs,
+):
+    """Export all performance metrics and time series data as a JSON-serializable dict.
+
+    Parameters
+    ----------
+    returns : pd.Series or pd.DataFrame
+        Strategy returns (daily).
+    benchmark : pd.Series, optional
+        Benchmark returns (daily).
+    rf : float
+        Risk-free rate (annualized).
+    compounded : bool
+        Whether to compound returns.
+    periods_per_year : int
+        Trading periods per year (default 365).
+    prepare_returns : bool
+        Whether to clean/prepare the returns series.
+    match_dates : bool
+        Whether to align dates between strategy and benchmark.
+    rolling_period : int
+        Window size for rolling metrics (default 126, approx half-year).
+    output : str, optional
+        If provided, write JSON to this file path.
+    **kwargs
+        Additional keyword arguments passed to metrics().
+
+    Returns
+    -------
+    dict
+        JSON-serializable dictionary with keys: metadata, scalar_metrics,
+        time_series, aggregated, drawdowns.
+    """
+    import json
+
+    if match_dates:
+        returns = returns.dropna()
+    returns.index = returns.index.tz_localize(None)
+
+    if prepare_returns:
+        returns = _utils._prepare_returns(returns)
+
+    if benchmark is not None:
+        if prepare_returns:
+            benchmark = _utils._prepare_returns(benchmark)
+        if match_dates:
+            returns, benchmark = _match_dates(returns, benchmark)
+
+    # 1. Scalar metrics from the full metrics() function
+    mtrx = metrics(
+        returns,
+        benchmark=benchmark,
+        rf=rf,
+        display=False,
+        mode="full",
+        compounded=compounded,
+        periods_per_year=periods_per_year,
+        prepare_returns=False,
+        match_dates=False,
+        **kwargs,
+    )
+
+    # Convert metrics DataFrame to dict (metric_name -> value)
+    scalar_metrics = {}
+    if mtrx is not None and not mtrx.empty:
+        for idx in mtrx.index:
+            row = mtrx.loc[idx]
+            if isinstance(row, _pd.Series):
+                # First column is strategy
+                val = row.iloc[0]
+                if isinstance(val, str):
+                    # Strip % signs and try to convert to float
+                    cleaned = val.strip().rstrip("%").strip()
+                    try:
+                        val = float(cleaned)
+                    except (ValueError, TypeError):
+                        pass
+                scalar_metrics[str(idx)] = val
+            else:
+                scalar_metrics[str(idx)] = row
+
+    # 2. Time series data
+    time_series = {}
+
+    # Cumulative returns
+    cum_returns = _stats.compsum(returns) if compounded else returns.cumsum()
+    time_series["cumulative_returns"] = _series_to_dict(cum_returns)
+
+    # Daily returns
+    time_series["daily_returns"] = _series_to_dict(returns)
+
+    # Rolling Sharpe
+    try:
+        rs = _stats.rolling_sharpe(returns, rf=rf, rolling_period=rolling_period)
+        if rs is not None and not rs.empty:
+            time_series["rolling_sharpe"] = _series_to_dict(rs)
+    except Exception:
+        pass
+
+    # Rolling Sortino
+    try:
+        rsort = _stats.rolling_sortino(returns, rf=rf, rolling_period=rolling_period)
+        if rsort is not None and not rsort.empty:
+            time_series["rolling_sortino"] = _series_to_dict(rsort)
+    except Exception:
+        pass
+
+    # Rolling Volatility
+    try:
+        rvol = _stats.rolling_volatility(returns, rolling_period=rolling_period)
+        if rvol is not None and not rvol.empty:
+            time_series["rolling_volatility"] = _series_to_dict(rvol)
+    except Exception:
+        pass
+
+    # Drawdown series
+    try:
+        dd_series = _stats.to_drawdown_series(returns)
+        if dd_series is not None and not dd_series.empty:
+            time_series["drawdown"] = _series_to_dict(dd_series)
+    except Exception:
+        pass
+
+    # Rolling Beta (requires benchmark)
+    if benchmark is not None:
+        try:
+            rbeta = _stats.rolling_greeks(returns, benchmark, periods=periods_per_year)
+            if rbeta is not None and not rbeta.empty:
+                time_series["rolling_beta"] = _series_to_dict(rbeta)
+        except Exception:
+            pass
+
+        # Benchmark cumulative returns
+        bench_cum = _stats.compsum(benchmark) if compounded else benchmark.cumsum()
+        time_series["benchmark_cumulative_returns"] = _series_to_dict(bench_cum)
+
+    # 3. Aggregated data
+    aggregated = {}
+
+    # Monthly returns
+    try:
+        monthly = _stats.monthly_returns(returns, eoy=False, compounded=compounded, prepare_returns=False)
+        if monthly is not None and not monthly.empty:
+            if isinstance(monthly, _pd.DataFrame):
+                aggregated["monthly_returns"] = _dataframe_to_dict(monthly)
+            else:
+                aggregated["monthly_returns"] = _series_to_dict(monthly)
+    except Exception:
+        pass
+
+    # Yearly returns
+    try:
+        yearly = _stats.compsum(returns).resample("YE").last()
+        if yearly is not None and not yearly.empty:
+            # Convert to year-over-year returns
+            yearly_pct = yearly.pct_change().dropna()
+            aggregated["yearly_returns"] = _series_to_dict(yearly_pct)
+    except Exception:
+        pass
+
+    # 4. Drawdown details
+    drawdowns_list = []
+    try:
+        dd_series = _stats.to_drawdown_series(returns)
+        dd_details = _stats.drawdown_details(dd_series)
+        if dd_details is not None and not dd_details.empty:
+            for _, row in dd_details.head(20).iterrows():
+                dd_entry = {}
+                for col in dd_details.columns:
+                    val = row[col]
+                    if hasattr(val, "isoformat"):
+                        dd_entry[col] = val.isoformat()
+                    elif isinstance(val, (int, float, _np.integer, _np.floating)):
+                        dd_entry[col] = float(val)
+                    else:
+                        dd_entry[col] = str(val)
+                drawdowns_list.append(dd_entry)
+    except Exception:
+        pass
+
+    # 5. Metadata
+    metadata = {
+        "start_date": str(returns.index[0].date()) if len(returns) > 0 else None,
+        "end_date": str(returns.index[-1].date()) if len(returns) > 0 else None,
+        "total_days": len(returns),
+        "risk_free_rate": rf,
+        "periods_per_year": periods_per_year,
+        "compounded": compounded,
+        "quantstats_version": __version__,
+    }
+
+    result = {
+        "metadata": metadata,
+        "scalar_metrics": scalar_metrics,
+        "time_series": time_series,
+        "aggregated": aggregated,
+        "drawdowns": drawdowns_list,
+    }
+
+    if output:
+        with open(output, "w") as f:
+            json.dump(result, f, indent=2, default=_json_default)
+
+    return result
+
+
+def _series_to_dict(series):
+    """Convert a pandas Series with datetime index to a JSON-serializable dict."""
+    if series is None or series.empty:
+        return {}
+    result = {}
+    for idx, val in series.items():
+        key = str(idx.date()) if hasattr(idx, "date") else str(idx)
+        if isinstance(val, (float, _np.floating)):
+            result[key] = None if _np.isnan(val) or _np.isinf(val) else float(val)
+        elif isinstance(val, (int, _np.integer)):
+            result[key] = int(val)
+        else:
+            result[key] = val
+    return result
+
+
+def _dataframe_to_dict(df):
+    """Convert a pandas DataFrame to a nested dict (row_label -> col_label -> value)."""
+    if df is None or df.empty:
+        return {}
+    result = {}
+    for idx in df.index:
+        row_key = str(idx)
+        row_data = {}
+        for col in df.columns:
+            val = df.loc[idx, col]
+            if isinstance(val, (float, _np.floating)):
+                row_data[str(col)] = None if _np.isnan(val) or _np.isinf(val) else float(val)
+            elif isinstance(val, (int, _np.integer)):
+                row_data[str(col)] = int(val)
+            else:
+                row_data[str(col)] = val
+        result[row_key] = row_data
+    return result
+
+
+def _json_default(obj):
+    """Default JSON serializer for objects not serializable by default json code."""
+    if isinstance(obj, (_np.integer,)):
+        return int(obj)
+    if isinstance(obj, (_np.floating,)):
+        return None if _np.isnan(obj) or _np.isinf(obj) else float(obj)
+    if isinstance(obj, _np.ndarray):
+        return obj.tolist()
+    if hasattr(obj, "isoformat"):
+        return obj.isoformat()
+    if isinstance(obj, _pd.Timestamp):
+        return str(obj)
+    return str(obj)

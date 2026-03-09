@@ -148,6 +148,7 @@ def extend_pandas():
     _po.plot_monthly_heatmap = plots.monthly_heatmap
 
     _po.metrics = reports.metrics
+    _po.metrics_json = reports.metrics_json
 
 
 # extend_pandas()
