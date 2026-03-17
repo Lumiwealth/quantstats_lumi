@@ -1,6 +1,12 @@
 Change Log
 ===========
 
+1.1.2
+-----
+- Align release automation with LumiBot-style tag-driven publishing (`vX.Y.Z`).
+- Add `pypi` environment based publish flow using `PYPI_API_TOKEN`.
+- Add deployment bootstrap docs/script for syncing release secret to GitHub environment.
+
 1.1.1
 -----
 - Fix `tearsheet_metrics.json` scalar value normalization so percent-formatted rows export as typed raw decimals (no `%` strings in values).
