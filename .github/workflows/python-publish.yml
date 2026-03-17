@@ -1,13 +1,12 @@
-name: Release (PyPI)
+name: Release (PyPI + GitHub)
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - "v*.*.*"
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -24,6 +23,29 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+
+      - name: Validate tag version matches package version
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          tag = os.environ.get("GITHUB_REF_NAME", "")
+          if not tag.startswith("v"):
+              raise SystemExit(f"Expected tag like vX.Y.Z, got {tag!r}")
+          expected = tag.removeprefix("v")
+
+          version_py = Path("quantstats_lumi/version.py").read_text(encoding="utf-8")
+          actual = None
+          for line in version_py.splitlines():
+              if line.strip().startswith("version"):
+                  actual = line.split("=", 1)[1].strip().strip('"').strip("'")
+                  break
+          if actual != expected:
+              raise SystemExit(f"Tag version {expected} != quantstats_lumi/version.py {actual}")
+          print(f"OK: tag={tag} package_version={actual}")
+          PY
 
       - name: Install dependencies
         run: |
@@ -50,10 +72,11 @@ jobs:
           path: dist/*
 
   publish:
-    name: Publish to PyPI
+    name: Publish to PyPI + Create GitHub Release
     needs: validate-build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    environment: pypi
     steps:
       - name: Download dist
         uses: actions/download-artifact@v4
@@ -65,3 +88,9 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
