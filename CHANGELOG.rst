@@ -1,6 +1,14 @@
 Change Log
 ===========
 
+1.1.1
+-----
+- Fix `tearsheet_metrics.json` scalar value normalization so percent-formatted rows export as typed raw decimals (no `%` strings in values).
+- Fix machine-readable tearsheet parity for key rows including Total Return, CAGR, Max Drawdown, Risk-Free Rate, Correlation, and Treynor Ratio.
+- Add tearsheet metric contract tests to prevent scalar-value regressions and `%` string reintroduction.
+- Add strategy-level custom tearsheet metrics support in reports (`custom_metrics`) and include those metrics in JSON summary exports.
+- Add additional summary metrics rows: Annualized Return on Risk Capital, Worst 3-Month Return, Time to Recovery, 5th Percentile Tail Loss, Time Underwater, and Percent Positive Months.
+
 0.0.62
 ------
 - Changed `serenity_index` and `recovery_factor` to use simple sum instead of compounded sum

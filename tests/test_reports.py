@@ -1,6 +1,7 @@
 import os
 import tempfile
 
+import numpy as np
 import pandas as pd
 
 import quantstats_lumi.reports as reports
@@ -99,6 +100,9 @@ def test_metrics_json_with_benchmark():
     ts = result["time_series"]
     assert "benchmark_cumulative_returns" in ts
     assert len(ts["benchmark_cumulative_returns"]) > 0
+    sharpe_metric = result["scalar_metrics"].get("Sharpe")
+    assert isinstance(sharpe_metric, dict)
+    assert len(sharpe_metric.keys()) >= 2
 
 
 def test_metrics_json_file_output():
@@ -140,6 +144,163 @@ def test_metrics_json_drawdowns():
         dd = result["drawdowns"][0]
         assert "start" in dd
         assert "max drawdown" in dd
+
+
+def test_metrics_json_summary_only():
+    index = pd.date_range(start="2020-01-01", periods=120, freq="B")
+    returns = pd.Series([0.002] * 60 + [-0.001] * 60, index=index)
+
+    result = reports.metrics_json(returns, summary_only=True)
+
+    assert "metadata" in result
+    assert "scalar_metrics" in result
+    assert "time_series" not in result
+    assert "aggregated" not in result
+    assert "drawdowns" not in result
+    assert "summary_tables" in result
+    assert result["metadata"]["summary_only"] is True
+
+
+def test_metrics_json_summary_only_percent_values_use_raw_decimals():
+    index = pd.date_range(start="2020-01-01", periods=260, freq="B")
+    returns = pd.Series([0.001] * 130 + [-0.0008] * 130, index=index)
+    benchmark = pd.Series([0.0007] * 130 + [-0.0006] * 130, index=index)
+
+    result = reports.metrics_json(
+        returns,
+        benchmark=benchmark,
+        summary_only=True,
+        rf=0.0369,
+    )
+    scalar_metrics = result["scalar_metrics"]
+
+    risk_free = scalar_metrics["Risk-Free Rate"]
+    assert isinstance(risk_free, dict)
+    assert abs(risk_free["Strategy"] - 0.0369) < 1e-12
+
+    positive_months = scalar_metrics["Percent Positive Months"]
+    assert isinstance(positive_months, dict)
+    assert abs(positive_months["Strategy"] - 0.5) < 1e-12
+
+
+def test_metrics_json_summary_only_matches_internal_tearsheet_rows_for_key_metrics():
+    index = pd.date_range(start="2020-01-01", periods=320, freq="B")
+    rng = np.random.default_rng(42)
+    strategy = pd.Series(rng.normal(0.0006, 0.01, len(index)), index=index, name="Strategy")
+    benchmark = pd.Series(
+        (strategy * 0.45).to_numpy() + rng.normal(0.0002, 0.009, len(index)),
+        index=index,
+        name="Benchmark",
+    )
+
+    table = reports.metrics(
+        strategy,
+        benchmark=benchmark,
+        display=False,
+        mode="full",
+        internal="True",
+    )
+    payload = reports.metrics_json(
+        strategy,
+        benchmark=benchmark,
+        summary_only=True,
+    )
+    scalar_metrics = payload["scalar_metrics"]
+
+    def _to_decimal(metric_name, raw_value):
+        if raw_value in (None, "", "-"):
+            return None
+        text = str(raw_value).strip().replace(",", "")
+        if text.endswith("%"):
+            numeric = float(text[:-1]) / 100.0
+        else:
+            numeric = float(text)
+        if metric_name == "Percent Positive Months" and abs(numeric) > 1.0:
+            numeric = numeric / 100.0
+        return numeric
+
+    key_metrics = [
+        "Total Return",
+        "CAGR% (Annual Return)",
+        "Max Drawdown",
+        "Risk-Free Rate",
+        "Correlation",
+        "Treynor Ratio",
+        "Percent Positive Months",
+    ]
+    for metric in key_metrics:
+        table_value = _to_decimal(metric, table.loc[metric, "Strategy"])
+        json_value = scalar_metrics.get(metric)
+        if isinstance(json_value, dict):
+            json_value = json_value.get("Strategy")
+        assert table_value is not None
+        assert json_value is not None
+        assert abs(float(json_value) - float(table_value)) < 1e-6, metric
+
+    total_return = scalar_metrics["Total Return"]["Strategy"]
+    assert total_return != 0.0
+
+
+def test_metrics_json_summary_only_has_no_percent_strings_in_scalar_values():
+    index = pd.date_range(start="2020-01-01", periods=260, freq="B")
+    returns = pd.Series([0.002] * 130 + [-0.0015] * 130, index=index)
+    benchmark = pd.Series([0.0017] * 130 + [-0.0010] * 130, index=index)
+
+    payload = reports.metrics_json(
+        returns,
+        benchmark=benchmark,
+        summary_only=True,
+    )
+    scalar_metrics = payload["scalar_metrics"]
+
+    for _, raw_metric_val in scalar_metrics.items():
+        values = raw_metric_val.values() if isinstance(raw_metric_val, dict) else [raw_metric_val]
+        for value in values:
+            if isinstance(value, str):
+                assert "%" not in value
+
+
+def test_metrics_json_custom_metrics():
+    index = pd.date_range(start="2020-01-01", periods=80, freq="B")
+    returns = pd.Series([0.001] * 80, index=index)
+
+    result = reports.metrics_json(
+        returns,
+        summary_only=True,
+        custom_metrics={"Custom Edge Score": 42.5},
+    )
+
+    assert "Custom Edge Score" in result["scalar_metrics"]
+    assert result["scalar_metrics"]["Custom Edge Score"] == 42.5
+
+
+def test_summary_only_scalar_metrics_covers_metrics_table_rows():
+    index = pd.date_range(start="2020-01-01", periods=260, freq="B")
+    returns = pd.Series([0.001] * 130 + [-0.0012] * 130, index=index, name="Strategy")
+    benchmark = pd.Series([0.0008] * 130 + [-0.0005] * 130, index=index, name="Benchmark")
+
+    mtrx = reports.metrics(returns, benchmark=benchmark, display=False, mode="full")
+    payload = reports.metrics_json(returns, benchmark=benchmark, summary_only=True)
+    scalar_metrics = payload["scalar_metrics"]
+
+    # Ignore intentional section separator rows.
+    metric_rows = [str(idx) for idx in mtrx.index if not str(idx).startswith("~")]
+    missing = [row for row in metric_rows if row not in scalar_metrics]
+    assert not missing, f"Missing summary scalar metrics for rows: {missing}"
+
+
+def test_metrics_table_includes_new_tearsheet_metrics():
+    index = pd.date_range(start="2020-01-01", periods=260, freq="B")
+    returns = pd.Series([0.001] * 130 + [-0.0012] * 130, index=index)
+
+    table = reports.metrics(returns, display=False, mode="full")
+
+    assert "Annualized Return on Risk Capital" in table.index
+    assert "Worst 3-Month Return" in table.index
+    assert "Time to Recovery (Days)" in table.index
+    assert "5th Percentile Tail Loss" in table.index
+    assert "Time Underwater (Days)" in table.index
+    assert "Percent Positive Months" in table.index
 
 
 def test_html_tearsheet_uses_log_scale_chart_instead_of_volatility_matched():
