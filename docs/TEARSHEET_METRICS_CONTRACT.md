@@ -17,11 +17,42 @@ machine-readable tearsheet summary payload.
 - Date/name metadata rows remain strings:
   - Start Period, End Period.
 
+## Named rows
+
+- The monthly downside row is named `Worst 1-Month Return`.
+- `Worst Month` is no longer the canonical tearsheet row name.
+
 ## Known row-level normalization
 
 `Percent Positive Months` is semantically percentage-like but appears without `%`
 in the current internal metrics table output. It is normalized to raw decimal in
 `metrics_json` (`83.33` -> `0.8333`).
+
+## Custom metrics
+
+- Custom metrics are merged into `scalar_metrics` exactly once, after built-in tearsheet rows are collected.
+- Custom metric values must be machine-typed scalars (`int`, `float`, `bool`, `string`, or `"-"` for unavailable).
+- For the cleanest HTML/JSON parity, prefer scalar custom metrics:
+
+  ```json
+  {
+    "Custom Return Observation Count": 252,
+    "Custom Mean Absolute Daily Return": 0.0117
+  }
+  ```
+
+- Nested custom metric dicts are supported, but if you want exact key parity between HTML and JSON, return explicit display column names rather than convenience aliases:
+
+  ```python
+  {
+      "Custom Relative Edge": {
+          "Strategy": 1.23,
+          "Benchmark (SPY)": 0.91,
+      }
+  }
+  ```
+
+- Custom metrics are treated as literal scalars. They do not receive automatic percent/unit conversion.
 
 ## Guardrails
 
@@ -29,4 +60,6 @@ Regression tests in `tests/test_reports.py` enforce:
 
 - key metric parity against internal tearsheet rows,
 - no `%` strings in `scalar_metrics` values,
-- raw-decimal output for risk-free rate and percent-positive-months rows.
+- raw-decimal output for risk-free rate and percent-positive-months rows,
+- inclusion of `Worst 1-Month Return` in the full tearsheet metrics table,
+- numeric custom metric preservation in `summary_only` JSON output.

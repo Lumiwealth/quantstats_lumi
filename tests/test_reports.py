@@ -274,6 +274,26 @@ def test_metrics_json_custom_metrics():
     assert result["scalar_metrics"]["Custom Edge Score"] == 42.5
 
 
+def test_metrics_json_custom_metrics_preserve_numeric_scalars():
+    index = pd.date_range(start="2020-01-01", periods=80, freq="B")
+    returns = pd.Series([0.001, -0.002, 0.003, -0.001] * 20, index=index)
+
+    result = reports.metrics_json(
+        returns,
+        summary_only=True,
+        custom_metrics={
+            "Custom Return Observation Count": int(returns.shape[0]),
+            "Custom Mean Absolute Daily Return": float(returns.abs().mean()),
+        },
+    )
+
+    scalar_metrics = result["scalar_metrics"]
+    assert scalar_metrics["Custom Return Observation Count"] == 80
+    assert abs(
+        float(scalar_metrics["Custom Mean Absolute Daily Return"]) - float(returns.abs().mean())
+    ) < 1e-12
+
+
 def test_summary_only_scalar_metrics_covers_metrics_table_rows():
     index = pd.date_range(start="2020-01-01", periods=260, freq="B")
     returns = pd.Series([0.001] * 130 + [-0.0012] * 130, index=index, name="Strategy")
@@ -295,6 +315,7 @@ def test_metrics_table_includes_new_tearsheet_metrics():
 
     table = reports.metrics(returns, display=False, mode="full")
 
+    assert "Worst 1-Month Return" in table.index
     assert "Annualized Return on Risk Capital" in table.index
     assert "Worst 3-Month Return" in table.index
     assert "Time to Recovery (Days)" in table.index

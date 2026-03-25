@@ -1,6 +1,12 @@
 Change Log
 ===========
 
+1.1.3
+-----
+- Rename the tearsheet row `Worst Month` to `Worst 1-Month Return` in both HTML and `tearsheet_metrics.json`.
+- Strengthen custom tearsheet metric coverage with numeric-scalar regression tests.
+- Expand tearsheet metrics contract and deployment docs to document raw-decimal JSON semantics and downstream dependency policy.
+
 1.1.2
 -----
 - Align release automation with LumiBot-style tag-driven publishing (`vX.Y.Z`).

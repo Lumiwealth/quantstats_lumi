@@ -13,6 +13,25 @@ Workflow file:
 
 - `.github/workflows/python-publish.yml`
 
+## Release order for tearsheet metric changes
+
+When tearsheet metrics change, the release order is strict:
+
+1. Update and release `quantstats_lumi` first.
+2. Update downstream consumers (for example `lumibot`) to require the new minimum version.
+3. Validate a clean environment using the released QuantStats package plus the updated downstream consumer source.
+4. Only then release the downstream consumer.
+
+This avoids mixed-version tearsheet behavior and stale local validation.
+
+## Downstream dependency policy
+
+For the current tearsheet metrics contract, downstream consumers should require:
+
+```text
+quantstats-lumi>=1.1.3,<1.2.0
+```
+
 ## Required secret
 
 The release workflow expects:

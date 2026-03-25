@@ -1437,7 +1437,7 @@ def metrics(
             )
             * pct
         )
-        metrics["Worst Month %"] = (
+        metrics["Worst 1-Month Return %"] = (
             _stats.worst(df, aggregate="ME", prepare_returns=False) * pct
         )
         metrics["Best Year %"] = (
