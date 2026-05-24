@@ -297,7 +297,11 @@ def _in_notebook(matplotlib_inline=False):
         if shell == "ZMQInteractiveShell":
             # Jupyter notebook or qtconsole
             if matplotlib_inline:
-                get_ipython().magic("matplotlib inline")
+                ipython = get_ipython()
+                if hasattr(ipython, "run_line_magic"):
+                    ipython.run_line_magic("matplotlib", "inline")
+                else:
+                    ipython.magic("matplotlib inline")
             return True
         if shell == "TerminalInteractiveShell":
             # Terminal running IPython

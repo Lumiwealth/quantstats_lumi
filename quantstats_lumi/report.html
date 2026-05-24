@@ -461,6 +461,17 @@
             box-shadow: var(--box-shadow);
         }
 
+        /* Bottom sections */
+        #bottom-sections {
+            clear: both;
+            width: 100%;
+            padding-top: 10px;
+        }
+
+        .full-width-section {
+            width: 100%;
+        }
+
         /* Parameters section styling */
         #params {
             margin-bottom: 25px;
@@ -478,6 +489,24 @@
 
         #params table {
             box-shadow: none;
+            table-layout: fixed;
+            min-width: 0;
+            font-size: 12px;
+        }
+
+        #params th,
+        #params td {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        #params th:first-child,
+        #params td:first-child {
+            width: 35%;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
         }
 
         /* No-trades message styling */
@@ -674,18 +703,6 @@
                 </div>
             </div>
 
-            <!-- Parameters section -->
-            <div class="section" id="params">
-                <div class="section-header">
-                    <h3>Parameters Used</h3>
-                </div>
-                <div class="section-body">
-                    <div class="table-wrapper">
-                        {{parameters_section}}
-                    </div>
-                </div>
-            </div>
-
             <div class="section">
                 <div class="section-header">
                     <h3>Key Performance Metrics</h3>
@@ -737,13 +754,16 @@
             <div id="dd_plot">{{dd_plot}}</div>
             <div id="monthly_heatmap">{{monthly_heatmap}}</div>
             <div id="returns_dist">{{returns_dist}}</div>
+        </div>
 
-            <!-- Disclaimer -->
+        <div id="bottom-sections">
             <div class="disclaimer">
                 Disclaimer: This report is for informational purposes only and
                 should not be considered as investment advice. Past performance
                 is not indicative of future results.
             </div>
+
+            {{parameters_section}}
         </div>
     </div>
 

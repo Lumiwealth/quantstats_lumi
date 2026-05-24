@@ -563,8 +563,12 @@ def omega(returns, rf=0.0, required_return=0.0, periods=365):
         return_threshold = (1 + required_return) ** (1.0 / periods) - 1
 
     returns_less_thresh = returns - return_threshold
-    numer = returns_less_thresh[returns_less_thresh > 0.0].sum().values[0]
-    denom = -1.0 * returns_less_thresh[returns_less_thresh < 0.0].sum().values[0]
+    numer = returns_less_thresh[returns_less_thresh > 0.0].sum()
+    denom = -1.0 * returns_less_thresh[returns_less_thresh < 0.0].sum()
+
+    if isinstance(denom, _pd.Series):
+        result = numer / denom
+        return result.where(denom > 0.0, _np.nan)
 
     if denom > 0.0:
         return numer / denom
@@ -774,9 +778,26 @@ def conditional_value_at_risk(returns, sigma=1, confidence=0.95, prepare_returns
     """
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
-    var = value_at_risk(returns, sigma, confidence)
-    c_var = returns[returns < var].values.mean()
-    return c_var if ~_np.isnan(c_var) else var
+    var = value_at_risk(returns, sigma, confidence, prepare_returns=False)
+
+    if isinstance(returns, _pd.DataFrame):
+        if isinstance(var, _pd.Series):
+            var_by_column = var.reindex(returns.columns)
+        elif isinstance(var, _np.ndarray):
+            var_by_column = _pd.Series(var, index=returns.columns)
+        else:
+            var_by_column = _pd.Series(float(var), index=returns.columns)
+
+        cvar_by_column = {}
+        for column in returns.columns:
+            threshold = var_by_column[column]
+            tail_returns = returns[column][returns[column] < threshold]
+            c_var = tail_returns.mean()
+            cvar_by_column[column] = c_var if not _np.isnan(c_var) else threshold
+        return _pd.Series(cvar_by_column)
+
+    c_var = returns[returns < var].mean()
+    return c_var if not _np.isnan(c_var) else var
 
 
 def cvar(returns, sigma=1, confidence=0.95, prepare_returns=True):
@@ -889,16 +910,45 @@ def risk_return_ratio(returns, prepare_returns=True):
     return returns.mean() / returns.std()
 
 
+def _looks_like_returns(data):
+    """Return True for return series/dataframes that need an initial equity anchor."""
+    if isinstance(data, _pd.DataFrame):
+        result = {}
+        for col in data.columns:
+            series = data[col].dropna()
+            result[col] = bool(not series.empty and (series.min() < 0 or series.max() < 1))
+        return _pd.Series(result)
+
+    series = data.dropna() if isinstance(data, _pd.Series) else _pd.Series(data).dropna()
+    return bool(not series.empty and (series.min() < 0 or series.max() < 1))
+
+
+def _drawdown_prices_and_peaks(data):
+    """Prepare prices and rolling peaks, preserving first-return drawdowns."""
+    return_like = _looks_like_returns(data)
+    prices = _utils._prepare_prices(data)
+    peaks = prices.expanding(min_periods=0).max()
+
+    if isinstance(prices, _pd.DataFrame):
+        for col, is_returns in return_like.items():
+            if is_returns and col in peaks:
+                peaks[col] = peaks[col].clip(lower=1.0)
+    elif return_like:
+        peaks = peaks.clip(lower=1.0)
+
+    return prices, peaks
+
+
 def max_drawdown(prices):
     """Calculates the maximum drawdown"""
-    prices = _utils._prepare_prices(prices)
-    return (prices / prices.expanding(min_periods=0).max()).min() - 1
+    prices, peaks = _drawdown_prices_and_peaks(prices)
+    return (prices / peaks).min() - 1
 
 
 def to_drawdown_series(returns):
     """Convert returns series to drawdown series"""
-    prices = _utils._prepare_prices(returns)
-    dd = prices / _np.maximum.accumulate(prices) - 1.0
+    prices, peaks = _drawdown_prices_and_peaks(returns)
+    dd = prices / peaks - 1.0
     return dd.replace([_np.inf, -_np.inf, -0], 0)
 
 

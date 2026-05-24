@@ -99,6 +99,29 @@ Output will generate something like this:
 
 ([view original html file](https://rawcdn.githack.com/Lumiwealth/quantstats_lumi/main/docs/tearsheet.html))
 
+### Machine-readable tearsheet metrics
+
+`quantstats_lumi` also exposes a machine-readable tearsheet summary payload:
+
+```python
+payload = qs.reports.metrics_json(
+    stock,
+    benchmark="SPY",
+    summary_only=True,
+)
+```
+
+Key points:
+
+- `payload["scalar_metrics"]` is the canonical summary metric dictionary.
+- Percentage-style metrics are stored as raw decimals in JSON (`0.0369`, not `"3.69%"`).
+- The monthly downside row is named `Worst 1-Month Return`.
+- Custom metrics can be appended with `custom_metrics={...}` and are merged into both the HTML tearsheet table and `tearsheet_metrics.json`.
+
+See the full machine-readable contract:
+
+- [`docs/TEARSHEET_METRICS_CONTRACT.md`](docs/TEARSHEET_METRICS_CONTRACT.md)
+
 ### To view a complete list of available methods, run
 
 ```python

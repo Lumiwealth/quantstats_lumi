@@ -1,6 +1,33 @@
 Change Log
 ===========
 
+1.1.4
+-----
+- Fix HTML tearsheet summary metrics honoring `match_dates=False`, keeping HTML/CSV aligned with `tearsheet_metrics.json`.
+- Add thousands separators to large tearsheet metrics and move strategy parameters into a full-width bottom section.
+- Fix first-return drawdowns in `max_drawdown()` and `to_drawdown_series()`.
+- Fix DataFrame `conditional_value_at_risk()`, Series `omega()`, unnamed benchmark headers, and IPython 9 notebook import behavior.
+
+1.1.3
+-----
+- Rename the tearsheet row `Worst Month` to `Worst 1-Month Return` in both HTML and `tearsheet_metrics.json`.
+- Strengthen custom tearsheet metric coverage with numeric-scalar regression tests.
+- Expand tearsheet metrics contract and deployment docs to document raw-decimal JSON semantics and downstream dependency policy.
+
+1.1.2
+-----
+- Align release automation with LumiBot-style tag-driven publishing (`vX.Y.Z`).
+- Add `pypi` environment based publish flow using `PYPI_API_TOKEN`.
+- Add deployment bootstrap docs/script for syncing release secret to GitHub environment.
+
+1.1.1
+-----
+- Fix `tearsheet_metrics.json` scalar value normalization so percent-formatted rows export as typed raw decimals (no `%` strings in values).
+- Fix machine-readable tearsheet parity for key rows including Total Return, CAGR, Max Drawdown, Risk-Free Rate, Correlation, and Treynor Ratio.
+- Add tearsheet metric contract tests to prevent scalar-value regressions and `%` string reintroduction.
+- Add strategy-level custom tearsheet metrics support in reports (`custom_metrics`) and include those metrics in JSON summary exports.
+- Add additional summary metrics rows: Annualized Return on Risk Capital, Worst 3-Month Return, Time to Recovery, 5th Percentile Tail Loss, Time Underwater, and Percent Positive Months.
+
 0.0.62
 ------
 - Changed `serenity_index` and `recovery_factor` to use simple sum instead of compounded sum

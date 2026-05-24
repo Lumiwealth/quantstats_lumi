@@ -21,6 +21,7 @@
 import re as _regex
 from base64 import b64encode as _b64encode
 from datetime import datetime as _dt
+from html import escape as _html_escape
 from io import StringIO
 from math import ceil as _ceil
 from math import sqrt as _sqrt
@@ -70,6 +71,81 @@ def _format_duration_seconds(seconds) -> str:
     if hours:
         return f"{hours:d}:{minutes:02d}:{seconds:02d}"
     return f"{minutes:d}:{seconds:02d}"
+
+
+_NUMERIC_DISPLAY_RE = _regex.compile(
+    r"^\s*(?P<sign>[-+])?(?P<number>(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)(?P<suffix>%?)\s*$"
+)
+
+_INTEGER_DISPLAY_METRICS = {
+    "Longest DD Days",
+    "Avg. Drawdown Days",
+    "Time to Recovery (Days)",
+    "Time Underwater (Days)",
+}
+
+
+def _format_metric_cell_for_display(metric_name, value):
+    """Add thousands separators without changing metric semantics."""
+    metric_name = str(metric_name).strip()
+    if not metric_name:
+        return value
+    if value is None:
+        return "-"
+    try:
+        if _pd.isna(value):
+            return "-"
+    except Exception:
+        pass
+
+    if isinstance(value, (_np.integer, int, _np.floating, float)):
+        numeric = float(value)
+        if _np.isnan(numeric) or _np.isinf(numeric):
+            return "-"
+        if metric_name in _INTEGER_DISPLAY_METRICS:
+            return f"{numeric:,.0f}"
+        return f"{numeric:,.2f}"
+
+    text = str(value).strip()
+    if text in {"", "-"}:
+        return text
+
+    match = _NUMERIC_DISPLAY_RE.match(text)
+    if not match:
+        return text
+
+    raw_number = match.group("number")
+    suffix = match.group("suffix")
+    sign = match.group("sign") or ""
+    try:
+        numeric = float(f"{sign}{raw_number.replace(',', '')}")
+    except ValueError:
+        return text
+
+    if metric_name in _INTEGER_DISPLAY_METRICS and not suffix:
+        decimals = 0
+    elif "e" in raw_number.lower():
+        decimals = 2
+    elif "." in raw_number:
+        decimals = len(raw_number.rsplit(".", 1)[1])
+    else:
+        decimals = 0
+
+    return f"{numeric:,.{decimals}f}{suffix}"
+
+
+def _format_metrics_for_display(metrics_df):
+    """Return a copy of a metrics table with readable numeric display strings."""
+    if not isinstance(metrics_df, _pd.DataFrame):
+        return metrics_df
+
+    display_df = metrics_df.copy()
+    for metric_name in display_df.index:
+        for column_name in display_df.columns:
+            display_df.at[metric_name, column_name] = _format_metric_cell_for_display(
+                metric_name, display_df.at[metric_name, column_name]
+            )
+    return display_df
 
 
 def html(
@@ -149,7 +225,7 @@ def html(
     win_year, win_half_year = _get_trading_periods(periods_per_year)
 
     tpl = ""
-    with open(template_path or __file__[:-4] + ".html", encoding='utf-8') as f:
+    with open(template_path or __file__[:-4] + ".html") as f:
         tpl = f.read()
         f.close()
 
@@ -172,9 +248,9 @@ def html(
             if isinstance(benchmark, str):
                 benchmark_title = benchmark
             elif isinstance(benchmark, _pd.Series):
-                benchmark_title = benchmark.name
+                benchmark_title = benchmark.name or "Benchmark"
             elif isinstance(benchmark, _pd.DataFrame):
-                benchmark_title = benchmark[benchmark.columns[0]].name
+                benchmark_title = benchmark[benchmark.columns[0]].name or "Benchmark"
 
         meta_parts = []
 
@@ -264,15 +340,19 @@ def html(
         compounded=compounded,
         periods_per_year=periods_per_year,
         prepare_returns=False,
+        match_dates=match_dates,
         benchmark_title=benchmark_title,
         strategy_title=strategy_title,
+        custom_metrics=kwargs.get("custom_metrics"),
+        risk_capital=kwargs.get("risk_capital"),
     )[2:]
 
     mtrx.index.name = "Metric"
+    display_mtrx = _format_metrics_for_display(mtrx)
     # tpl = tpl.replace("{{metrics}}", _html_table(mtrx)) # Original line
     
     # Modified replacement for metrics table
-    metrics_table_html = _html_table(mtrx)
+    metrics_table_html = _html_table(display_mtrx)
     # The "no trades" message is no longer prepended here.
     tpl = tpl.replace("{{metrics}}", metrics_table_html, 1)
 
@@ -280,57 +360,37 @@ def html(
     # Ensure these are cast to str and the no_trades_html_message is NOT with CAGR here.
 
     # CAGR #
-    cagr_value = mtrx.loc["CAGR% (Annual Return)", strategy_title]
-    # Ensure CAGR is formatted as a percentage string with 2 decimals
-    if isinstance(cagr_value, float):
-        cagr_str = f"{cagr_value:.2f}%"
-    else:
-        cagr_str = str(cagr_value)
+    cagr_value = display_mtrx.loc["CAGR% (Annual Return)", strategy_title]
+    cagr_str = str(cagr_value)
     tpl = tpl.replace("{{cagr}}", cagr_str)
 
     # Total Return #
-    total_return_value = mtrx.loc["Total Return", strategy_title]
-    # Ensure Total Return is formatted as a percentage string with 2 decimals
-    if isinstance(total_return_value, float):
-        total_return_str = f"{total_return_value:.2f}%"
-    else:
-        total_return_str = str(total_return_value)
+    total_return_value = display_mtrx.loc["Total Return", strategy_title]
+    total_return_str = str(total_return_value)
     tpl = tpl.replace("{{total_return}}", total_return_str)
 
     # Max Drawdown #
-    max_drawdown_value = mtrx.loc["Max Drawdown", strategy_title]
-    if isinstance(max_drawdown_value, float):
-        max_drawdown_str = f"{max_drawdown_value:.2f}%"
-    else:
-        max_drawdown_str = str(max_drawdown_value)
+    max_drawdown_value = display_mtrx.loc["Max Drawdown", strategy_title]
+    max_drawdown_str = str(max_drawdown_value)
     tpl = tpl.replace("{{max_drawdown}}", max_drawdown_str)
 
     # RoMaD #
-    romad_value = mtrx.loc["RoMaD", strategy_title]
-    if isinstance(romad_value, float):
-        romad_str = f"{romad_value:.2f}"
-    else:
-        romad_str = str(romad_value)
+    romad_value = display_mtrx.loc["RoMaD", strategy_title]
+    romad_str = str(romad_value)
     tpl = tpl.replace("{{romad}}", romad_str)
 
     # Longest Drawdown Duration #
-    longest_dd_days_value = mtrx.loc["Longest DD Days", strategy_title]
+    longest_dd_days_value = display_mtrx.loc["Longest DD Days", strategy_title]
     tpl = tpl.replace("{{longest_dd_days}}", str(longest_dd_days_value))
 
     # Sharpe #
-    sharpe_value = mtrx.loc["Sharpe", strategy_title]
-    if isinstance(sharpe_value, float):
-        sharpe_str = f"{sharpe_value:.2f}"
-    else:
-        sharpe_str = str(sharpe_value)
+    sharpe_value = display_mtrx.loc["Sharpe", strategy_title]
+    sharpe_str = str(sharpe_value)
     tpl = tpl.replace("{{sharpe}}", sharpe_str)
 
     # Sortino #
-    sortino_value = mtrx.loc["Sortino", strategy_title]
-    if isinstance(sortino_value, float):
-        sortino_str = f"{sortino_value:.2f}"
-    else:
-        sortino_str = str(sortino_value)
+    sortino_value = display_mtrx.loc["Sortino", strategy_title]
+    sortino_str = str(sortino_value)
     tpl = tpl.replace("{{sortino}}", sortino_str)
 
 
@@ -696,7 +756,7 @@ def html(
     print(f"HTML report saved to: {output}")
 
     # Return the metrics
-    return mtrx
+    return display_mtrx
 
 
 def full(
@@ -940,26 +1000,212 @@ def parameters_section(parameters):
         return ""
 
     tpl = """
-    <div id="params">
-        <h3>Parameters Used</h3>
-        <table style="width:100%; font-size: 12px">
+    <div class="section full-width-section" id="params">
+        <div class="section-header">
+            <h3>Parameters Used</h3>
+        </div>
+        <div class="section-body">
+            <div class="table-wrapper">
+                <table>
     """
 
-    # Add titles to the table
     tpl += "<thead><tr><th>Parameter</th><th>Value</th></tr></thead>"
 
     for key, value in parameters.items():
-        # Make sure that the value is something that can be displayed
         if not isinstance(value, (int, float, str)):
             value = str(value)
 
-        tpl += f"<tr><td>{key}</td><td>{value}</td></tr>"
+        tpl += (
+            "<tr>"
+            f"<td>{_html_escape(str(key))}</td>"
+            f"<td>{_html_escape(str(value))}</td>"
+            "</tr>"
+        )
     tpl += """
-        </table>
+                </table>
+            </div>
+        </div>
     </div>
     """
 
     return tpl
+
+
+def _sanitize_metric_scalar(value):
+    """Normalize custom metric values for table/json outputs."""
+    if value is None:
+        return "-"
+    if isinstance(value, (bool,)):
+        return bool(value)
+    if isinstance(value, (_np.integer, int)):
+        return int(value)
+    if isinstance(value, (_np.floating, float)):
+        numeric = float(value)
+        if _np.isnan(numeric) or _np.isinf(numeric):
+            return "-"
+        return numeric
+    return str(value)
+
+
+def _coerce_metric_cell(value):
+    """Normalize table cell values for machine-readable metric export."""
+    if value is None:
+        return "-"
+    if isinstance(value, (_np.integer, int)):
+        return int(value)
+    if isinstance(value, (_np.floating, float)):
+        numeric = float(value)
+        if _np.isnan(numeric) or _np.isinf(numeric):
+            return "-"
+        return numeric
+    if isinstance(value, str):
+        text = value.strip()
+        if text in ("", "-"):
+            return "-"
+        is_percent = text.endswith("%")
+        cleaned = text[:-1].strip() if is_percent else text
+        cleaned = cleaned.replace(",", "")
+        try:
+            numeric = float(cleaned)
+            return numeric / 100.0 if is_percent else numeric
+        except (ValueError, TypeError):
+            return text
+    return str(value)
+
+
+def _append_custom_metrics_rows(metrics_table, custom_metrics, strategy_columns, benchmark_column=None):
+    """
+    Append user-provided custom metrics to the final metrics table.
+
+    Supported value formats:
+    - {"Metric A": 1.23} -> applies to first strategy column
+    - {"Metric B": {"strategy": 1.23, "benchmark": 0.45}}
+    - {"Metric C": {"Strategy": 1.23, "Benchmark (SPY)": 0.45}}
+    """
+    if not isinstance(custom_metrics, dict) or not custom_metrics:
+        return metrics_table
+
+    if isinstance(strategy_columns, str):
+        strategy_columns = [strategy_columns]
+    strategy_columns = list(strategy_columns or [])
+
+    table = metrics_table.copy()
+    columns = list(table.columns)
+    first_strategy_col = strategy_columns[0] if strategy_columns else (columns[0] if columns else None)
+    benchmark_col = benchmark_column if benchmark_column in columns else None
+
+    for raw_name, raw_value in custom_metrics.items():
+        name = str(raw_name).strip()
+        if not name:
+            continue
+
+        row = {col: "-" for col in columns}
+
+        if isinstance(raw_value, dict):
+            for key, value in raw_value.items():
+                target = None
+                key_str = str(key)
+                lower = key_str.lower()
+                if key_str in row:
+                    target = key_str
+                elif lower == "strategy" and first_strategy_col in row:
+                    target = first_strategy_col
+                elif lower == "benchmark" and benchmark_col in row:
+                    target = benchmark_col
+                if target is not None:
+                    row[target] = _sanitize_metric_scalar(value)
+        elif first_strategy_col is not None:
+            row[first_strategy_col] = _sanitize_metric_scalar(raw_value)
+
+        table.loc[name] = row
+
+    return table
+
+
+def _worst_three_month_return(returns_series, compounded=True):
+    series = returns_series.dropna()
+    if series.empty:
+        return _np.nan
+    monthly = series.resample("ME").apply(_stats.comp if compounded else _np.sum)
+    if monthly.empty:
+        return _np.nan
+    if compounded:
+        rolling = (1.0 + monthly).rolling(3).apply(_np.prod, raw=True) - 1.0
+    else:
+        rolling = monthly.rolling(3).sum()
+    return float(rolling.min()) if not rolling.dropna().empty else _np.nan
+
+
+def _time_to_recovery_days(returns_series):
+    series = returns_series.dropna()
+    if series.empty:
+        return _np.nan
+    dd_series = _stats.to_drawdown_series(series)
+    dd_details = _stats.drawdown_details(dd_series)
+    if dd_details is None or dd_details.empty:
+        return 0.0
+    worst = dd_details.sort_values(by="max drawdown", ascending=True).iloc[0]
+    valley = worst.get("valley")
+    end = worst.get("end")
+    if valley is None or end is None or _pd.isna(valley) or _pd.isna(end):
+        return _np.nan
+    valley_ts = _pd.to_datetime(valley, errors="coerce")
+    end_ts = _pd.to_datetime(end, errors="coerce")
+    if _pd.isna(valley_ts) or _pd.isna(end_ts):
+        return _np.nan
+    delta_days = (end_ts - valley_ts).days
+    return float(max(0, int(delta_days)))
+
+
+def _time_underwater_days(returns_series):
+    series = returns_series.dropna()
+    if series.empty:
+        return 0.0
+    dd_series = _stats.to_drawdown_series(series)
+    dd_details = _stats.drawdown_details(dd_series)
+    if dd_details is None or dd_details.empty or "days" not in dd_details.columns:
+        return 0.0
+    return float(_pd.to_numeric(dd_details["days"], errors="coerce").fillna(0).sum())
+
+
+def _percent_positive_months(returns_series, compounded=True):
+    series = returns_series.dropna()
+    if series.empty:
+        return _np.nan
+    monthly = series.resample("ME").apply(_stats.comp if compounded else _np.sum)
+    if monthly.empty:
+        return _np.nan
+    return float((monthly > 0).mean() * 100.0)
+
+
+def _annualized_return_on_risk_capital(
+    returns_series,
+    periods_per_year=252,
+    compounded=True,
+    explicit_risk_capital=None,
+):
+    series = returns_series.dropna()
+    trading_days = int(len(series))
+    if trading_days <= 0:
+        return _np.nan
+
+    total_return = float(_stats.comp(series) if compounded else series.sum())
+    risk_capital = explicit_risk_capital
+    if risk_capital is None:
+        try:
+            risk_capital = abs(float(_stats.max_drawdown(series)))
+        except Exception:
+            risk_capital = _np.nan
+
+    try:
+        risk_capital = float(risk_capital)
+    except Exception:
+        risk_capital = _np.nan
+
+    if _np.isnan(risk_capital) or _np.isinf(risk_capital) or risk_capital <= 0:
+        return _np.nan
+
+    return (total_return / risk_capital) * (float(periods_per_year) / float(trading_days))
 
 def metrics(
     returns,
@@ -1049,6 +1295,25 @@ def metrics(
         s_rf["benchmark"] = rf
 
     df = df.fillna(0)
+
+    risk_capital_input = kwargs.get("risk_capital")
+
+    def _risk_capital_for_col(col_name):
+        if isinstance(risk_capital_input, dict):
+            # Prefer exact column match (returns_1 / benchmark), then friendly aliases.
+            if col_name in risk_capital_input:
+                return risk_capital_input[col_name]
+            if col_name == "benchmark" and "benchmark" in risk_capital_input:
+                return risk_capital_input.get("benchmark")
+            if col_name != "benchmark":
+                if "strategy" in risk_capital_input:
+                    return risk_capital_input.get("strategy")
+                if col_name in strategy_colname if isinstance(strategy_colname, list) else [strategy_colname]:
+                    return risk_capital_input.get(col_name)
+            return None
+        if isinstance(risk_capital_input, (int, float, _np.integer, _np.floating)):
+            return float(risk_capital_input)
+        return None
 
     # pct multiplier
     pct = 100 if display or "internal" in kwargs else 1
@@ -1239,7 +1504,7 @@ def metrics(
             )
             * pct
         )
-        metrics["Worst Month %"] = (
+        metrics["Worst 1-Month Return %"] = (
             _stats.worst(df, aggregate="ME", prepare_returns=False) * pct
         )
         metrics["Best Year %"] = (
@@ -1262,6 +1527,37 @@ def metrics(
     metrics["Recovery Factor"] = _stats.recovery_factor(df)
     metrics["Ulcer Index"] = _stats.ulcer_index(df)
     metrics["Serenity Index"] = _stats.serenity_index(df, rf)
+
+    annualized_on_risk_capital = {}
+    worst_three_month = {}
+    time_to_recovery = {}
+    fifth_percentile_tail_loss = {}
+    time_underwater = {}
+    percent_positive_months = {}
+
+    for col in df.columns:
+        series = df[col]
+        annualized_on_risk_capital[col] = (
+            _annualized_return_on_risk_capital(
+                series,
+                periods_per_year=periods_per_year,
+                compounded=compounded,
+                explicit_risk_capital=_risk_capital_for_col(col),
+            )
+            * pct
+        )
+        worst_three_month[col] = _worst_three_month_return(series, compounded=compounded) * pct
+        time_to_recovery[col] = _time_to_recovery_days(series)
+        fifth_percentile_tail_loss[col] = _np.percentile(series.dropna(), 5) * pct if not series.dropna().empty else _np.nan
+        time_underwater[col] = _time_underwater_days(series)
+        percent_positive_months[col] = _percent_positive_months(series, compounded=compounded)
+
+    metrics["Annualized Return on Risk Capital %"] = _pd.Series(annualized_on_risk_capital)
+    metrics["Worst 3-Month Return %"] = _pd.Series(worst_three_month)
+    metrics["Time to Recovery (Days)"] = _pd.Series(time_to_recovery)
+    metrics["5th Percentile Tail Loss %"] = _pd.Series(fifth_percentile_tail_loss)
+    metrics["Time Underwater (Days)"] = _pd.Series(time_underwater)
+    metrics["Percent Positive Months"] = _pd.Series(percent_positive_months)
 
     # win rate
     if mode.lower() == "full":
@@ -1442,6 +1738,13 @@ def metrics(
             [benchmark_colname]
             + [col for col in metrics.columns if col != benchmark_colname]
         ]
+
+    metrics = _append_custom_metrics_rows(
+        metrics,
+        kwargs.get("custom_metrics"),
+        strategy_colname,
+        benchmark_colname if "benchmark" in df else None,
+    )
 
     if display:
         print(_tabulate(metrics, headers="keys", tablefmt="simple"))
@@ -1885,3 +2188,380 @@ def _embed_figure(figfiles, figfmt):
         data_uri = _b64encode(figbytes).decode()
         embed_string = '<img src="data:image/{};base64,{}" />'.format(figfmt, data_uri)
     return embed_string
+
+
+def metrics_json(
+    returns,
+    benchmark=None,
+    rf=0.0,
+    compounded=True,
+    periods_per_year=365,
+    prepare_returns=True,
+    match_dates=True,
+    rolling_period=126,
+    output=None,
+    summary_only=False,
+    **kwargs,
+):
+    """Export all performance metrics and time series data as a JSON-serializable dict.
+
+    Parameters
+    ----------
+    returns : pd.Series or pd.DataFrame
+        Strategy returns (daily).
+    benchmark : pd.Series, optional
+        Benchmark returns (daily).
+    rf : float
+        Risk-free rate (annualized).
+    compounded : bool
+        Whether to compound returns.
+    periods_per_year : int
+        Trading periods per year (default 365).
+    prepare_returns : bool
+        Whether to clean/prepare the returns series.
+    match_dates : bool
+        Whether to align dates between strategy and benchmark.
+    rolling_period : int
+        Window size for rolling metrics (default 126, approx half-year).
+    output : str, optional
+        If provided, write JSON to this file path.
+    **kwargs
+        Additional keyword arguments passed to metrics().
+
+    summary_only : bool
+        When True, only metadata + scalar_metrics are exported. This is the
+        preferred shape for tearsheet summary artifacts.
+    Returns
+    -------
+    dict
+        JSON-serializable dictionary with keys: metadata, scalar_metrics,
+        time_series, aggregated, drawdowns.
+    """
+    import json
+
+    if match_dates:
+        returns = returns.dropna()
+    returns.index = returns.index.tz_localize(None)
+
+    if prepare_returns:
+        returns = _utils._prepare_returns(returns)
+
+    if benchmark is not None:
+        if prepare_returns:
+            benchmark = _utils._prepare_returns(benchmark)
+        if match_dates:
+            returns, benchmark = _match_dates(returns, benchmark)
+
+    custom_metrics = kwargs.get("custom_metrics")
+
+    # 1. Scalar metrics from the full metrics() function.
+    # Use internal formatting so percent-bearing metrics are consistently rendered
+    # with "%" suffixes (except known edge rows like Percent Positive Months).
+    mtrx = metrics(
+        returns,
+        benchmark=benchmark,
+        rf=rf,
+        display=False,
+        mode="full",
+        internal="True",
+        compounded=compounded,
+        periods_per_year=periods_per_year,
+        prepare_returns=False,
+        match_dates=False,
+        **kwargs,
+    )
+
+    _decimal_percent_rows_without_suffix = {"Percent Positive Months"}
+
+    def _normalize_metric_value(metric_name, value):
+        """Normalize row values into canonical machine-typed scalars."""
+        if isinstance(value, dict):
+            return {k: _normalize_metric_value(metric_name, v) for k, v in value.items()}
+        if not isinstance(value, (_np.integer, int, _np.floating, float)):
+            return value
+
+        numeric = float(value)
+        if _np.isnan(numeric) or _np.isinf(numeric):
+            return "-"
+
+        # This row is semantically percentage-like but currently appears without "%"
+        # in the table output. Normalize to raw decimal for JSON contract.
+        if metric_name in _decimal_percent_rows_without_suffix and abs(numeric) > 1.0:
+            return numeric / 100.0
+
+        return numeric
+
+    # Convert metrics DataFrame to dict (metric_name -> value or column-mapped dict)
+    scalar_metrics = {}
+    if mtrx is not None and not mtrx.empty:
+        for idx in mtrx.index:
+            metric_name = str(idx)
+            row = mtrx.loc[idx]
+            if isinstance(row, _pd.Series):
+                row_payload = {}
+                for col_name, raw_val in row.items():
+                    coerced = _coerce_metric_cell(raw_val)
+                    row_payload[str(col_name)] = _normalize_metric_value(metric_name, coerced)
+                non_dash = {k: v for k, v in row_payload.items() if v != "-"}
+                if len(non_dash) == 1:
+                    scalar_metrics[metric_name] = list(non_dash.values())[0]
+                else:
+                    scalar_metrics[metric_name] = row_payload
+            else:
+                scalar_metrics[metric_name] = _normalize_metric_value(metric_name, _coerce_metric_cell(row))
+
+    # Ensure custom metrics are present as scalar values for machine-readability.
+    if isinstance(custom_metrics, dict):
+        for key, value in custom_metrics.items():
+            metric_name = str(key).strip()
+            if not metric_name:
+                continue
+            if isinstance(value, dict):
+                scalar_metrics[metric_name] = {
+                    str(k): _sanitize_metric_scalar(v) for k, v in value.items()
+                }
+            else:
+                scalar_metrics[metric_name] = _sanitize_metric_scalar(value)
+
+    metadata = {
+        "start_date": str(returns.index[0].date()) if len(returns) > 0 else None,
+        "end_date": str(returns.index[-1].date()) if len(returns) > 0 else None,
+        "total_days": len(returns),
+        "risk_free_rate": rf,
+        "periods_per_year": periods_per_year,
+        "compounded": compounded,
+        "summary_only": bool(summary_only),
+        "quantstats_version": __version__,
+    }
+
+    # Optional compact summary tables for machine-readable tearsheet consumers.
+    summary_tables = {}
+    try:
+        strategy_yearly = (returns + 1).resample("YE").prod() - 1 if compounded else returns.resample("YE").sum()
+        strategy_yearly.index = strategy_yearly.index.year
+        strategy_yearly = strategy_yearly.dropna()
+        if benchmark is not None:
+            benchmark_yearly = (benchmark + 1).resample("YE").prod() - 1 if compounded else benchmark.resample("YE").sum()
+            benchmark_yearly.index = benchmark_yearly.index.year
+            benchmark_yearly = benchmark_yearly.dropna()
+            shared_years = sorted(set(strategy_yearly.index).intersection(set(benchmark_yearly.index)))
+            eoy_rows = []
+            for yr in shared_years:
+                strategy_val = float(strategy_yearly.loc[yr])
+                benchmark_val = float(benchmark_yearly.loc[yr])
+                multiplier = strategy_val / benchmark_val if benchmark_val not in (0.0, -0.0) else None
+                eoy_rows.append(
+                    {
+                        "year": int(yr),
+                        "strategy": strategy_val,
+                        "benchmark": benchmark_val,
+                        "multiplier": float(multiplier) if multiplier is not None else None,
+                        "won": bool(strategy_val > benchmark_val),
+                    }
+                )
+            if eoy_rows:
+                summary_tables["eoy_returns_vs_benchmark"] = eoy_rows
+        elif not strategy_yearly.empty:
+            summary_tables["yearly_returns"] = [
+                {"year": int(yr), "strategy": float(strategy_yearly.loc[yr])}
+                for yr in strategy_yearly.index
+            ]
+    except Exception:
+        pass
+
+    try:
+        dd_series_summary = _stats.to_drawdown_series(returns)
+        dd_details_summary = _stats.drawdown_details(dd_series_summary)
+        if dd_details_summary is not None and not dd_details_summary.empty:
+            dd_rows = []
+            for _, row in dd_details_summary.head(20).iterrows():
+                dd_entry = {}
+                for col in dd_details_summary.columns:
+                    val = row[col]
+                    if hasattr(val, "isoformat"):
+                        dd_entry[col] = val.isoformat()
+                    elif isinstance(val, (int, float, _np.integer, _np.floating)):
+                        dd_entry[col] = float(val)
+                    else:
+                        dd_entry[col] = str(val)
+                dd_rows.append(dd_entry)
+            if dd_rows:
+                summary_tables["drawdowns"] = dd_rows
+    except Exception:
+        pass
+
+    if summary_only:
+        result = {
+            "metadata": metadata,
+            "scalar_metrics": scalar_metrics,
+        }
+        if summary_tables:
+            result["summary_tables"] = summary_tables
+        if output:
+            with open(output, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2, default=_json_default)
+        return result
+
+    # 2. Time series data
+    time_series = {}
+
+    # Cumulative returns
+    cum_returns = _stats.compsum(returns) if compounded else returns.cumsum()
+    time_series["cumulative_returns"] = _series_to_dict(cum_returns)
+
+    # Daily returns
+    time_series["daily_returns"] = _series_to_dict(returns)
+
+    # Rolling Sharpe
+    try:
+        rs = _stats.rolling_sharpe(returns, rf=rf, rolling_period=rolling_period)
+        if rs is not None and not rs.empty:
+            time_series["rolling_sharpe"] = _series_to_dict(rs)
+    except Exception:
+        pass
+
+    # Rolling Sortino
+    try:
+        rsort = _stats.rolling_sortino(returns, rf=rf, rolling_period=rolling_period)
+        if rsort is not None and not rsort.empty:
+            time_series["rolling_sortino"] = _series_to_dict(rsort)
+    except Exception:
+        pass
+
+    # Rolling Volatility
+    try:
+        rvol = _stats.rolling_volatility(returns, rolling_period=rolling_period)
+        if rvol is not None and not rvol.empty:
+            time_series["rolling_volatility"] = _series_to_dict(rvol)
+    except Exception:
+        pass
+
+    # Drawdown series
+    try:
+        dd_series = _stats.to_drawdown_series(returns)
+        if dd_series is not None and not dd_series.empty:
+            time_series["drawdown"] = _series_to_dict(dd_series)
+    except Exception:
+        pass
+
+    # Rolling Beta (requires benchmark)
+    if benchmark is not None:
+        try:
+            rbeta = _stats.rolling_greeks(returns, benchmark, periods=periods_per_year)
+            if rbeta is not None and not rbeta.empty:
+                time_series["rolling_beta"] = _series_to_dict(rbeta)
+        except Exception:
+            pass
+
+        # Benchmark cumulative returns
+        bench_cum = _stats.compsum(benchmark) if compounded else benchmark.cumsum()
+        time_series["benchmark_cumulative_returns"] = _series_to_dict(bench_cum)
+
+    # 3. Aggregated data
+    aggregated = {}
+
+    # Monthly returns
+    try:
+        monthly = _stats.monthly_returns(returns, eoy=False, compounded=compounded, prepare_returns=False)
+        if monthly is not None and not monthly.empty:
+            if isinstance(monthly, _pd.DataFrame):
+                aggregated["monthly_returns"] = _dataframe_to_dict(monthly)
+            else:
+                aggregated["monthly_returns"] = _series_to_dict(monthly)
+    except Exception:
+        pass
+
+    # Yearly returns
+    try:
+        yearly = _stats.compsum(returns).resample("YE").last()
+        if yearly is not None and not yearly.empty:
+            # Convert to year-over-year returns
+            yearly_pct = yearly.pct_change().dropna()
+            aggregated["yearly_returns"] = _series_to_dict(yearly_pct)
+    except Exception:
+        pass
+
+    # 4. Drawdown details
+    drawdowns_list = []
+    try:
+        dd_series = _stats.to_drawdown_series(returns)
+        dd_details = _stats.drawdown_details(dd_series)
+        if dd_details is not None and not dd_details.empty:
+            for _, row in dd_details.head(20).iterrows():
+                dd_entry = {}
+                for col in dd_details.columns:
+                    val = row[col]
+                    if hasattr(val, "isoformat"):
+                        dd_entry[col] = val.isoformat()
+                    elif isinstance(val, (int, float, _np.integer, _np.floating)):
+                        dd_entry[col] = float(val)
+                    else:
+                        dd_entry[col] = str(val)
+                drawdowns_list.append(dd_entry)
+    except Exception:
+        pass
+
+    result = {
+        "metadata": metadata,
+        "scalar_metrics": scalar_metrics,
+        "time_series": time_series,
+        "aggregated": aggregated,
+        "drawdowns": drawdowns_list,
+    }
+
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2, default=_json_default)
+
+    return result
+
+
+def _series_to_dict(series):
+    """Convert a pandas Series with datetime index to a JSON-serializable dict."""
+    if series is None or series.empty:
+        return {}
+    result = {}
+    for idx, val in series.items():
+        key = str(idx.date()) if hasattr(idx, "date") else str(idx)
+        if isinstance(val, (float, _np.floating)):
+            result[key] = None if _np.isnan(val) or _np.isinf(val) else float(val)
+        elif isinstance(val, (int, _np.integer)):
+            result[key] = int(val)
+        else:
+            result[key] = val
+    return result
+
+
+def _dataframe_to_dict(df):
+    """Convert a pandas DataFrame to a nested dict (row_label -> col_label -> value)."""
+    if df is None or df.empty:
+        return {}
+    result = {}
+    for idx in df.index:
+        row_key = str(idx)
+        row_data = {}
+        for col in df.columns:
+            val = df.loc[idx, col]
+            if isinstance(val, (float, _np.floating)):
+                row_data[str(col)] = None if _np.isnan(val) or _np.isinf(val) else float(val)
+            elif isinstance(val, (int, _np.integer)):
+                row_data[str(col)] = int(val)
+            else:
+                row_data[str(col)] = val
+        result[row_key] = row_data
+    return result
+
+
+def _json_default(obj):
+    """Default JSON serializer for objects not serializable by default json code."""
+    if isinstance(obj, (_np.integer,)):
+        return int(obj)
+    if isinstance(obj, (_np.floating,)):
+        return None if _np.isnan(obj) or _np.isinf(obj) else float(obj)
+    if isinstance(obj, _np.ndarray):
+        return obj.tolist()
+    if hasattr(obj, "isoformat"):
+        return obj.isoformat()
+    if isinstance(obj, _pd.Timestamp):
+        return str(obj)
+    return str(obj)
