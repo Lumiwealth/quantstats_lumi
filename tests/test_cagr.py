@@ -77,7 +77,7 @@ def test_cagr_less_than_one_year():
 
 def test_cagr_intraday_hours():
     # 5 hours, 0.1% per hour
-    index = pd.date_range(start='2022-01-01 09:00', periods=5, freq='H')
+    index = pd.date_range(start='2022-01-01 09:00', periods=5, freq='h')
     returns = pd.Series([0.001]*5, index=index)
     calculated_cagr = stats.cagr(returns)
     actual_years = (index[-1] - index[0]).total_seconds() / (365.25 * 24 * 60 * 60)

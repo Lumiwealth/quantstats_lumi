@@ -6,7 +6,7 @@ import os
 
 def test_summary_metrics_match_metrics_table():
     # 12 months, 3% per month compounded
-    index = pd.date_range(start='2022-01-31', periods=12, freq='M')
+    index = pd.date_range(start='2022-01-31', periods=12, freq='ME')
     returns = pd.Series([0.03]*12, index=index, name="Strategy")
     parameters = {"test_param": 2}
     with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp:
