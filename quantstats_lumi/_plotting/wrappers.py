@@ -935,6 +935,7 @@ def monthly_heatmap(
     cmap = "gray" if grayscale else "RdYlGn"
 
     returns = _stats.monthly_returns(returns, eoy=eoy, compounded=compounded) * 100
+    mask = returns.map(lambda x: x == 0)
 
     fig_height = len(returns) / 2.5
 
@@ -983,6 +984,7 @@ def monthly_heatmap(
             cbar=cbar,
             cmap=cmap,
             cbar_kws={"format": "%.0f%%"},
+            mask=mask,
         )
     else:
         ax.set_title(
@@ -1005,6 +1007,7 @@ def monthly_heatmap(
             cbar=cbar,
             cmap=cmap,
             cbar_kws={"format": "%.0f%%"},
+            mask=mask,
         )
     # _sns.set(font_scale=1)
 
@@ -1016,6 +1019,8 @@ def monthly_heatmap(
     ax.tick_params(colors="#808080")
     _plt.xticks(rotation=0, fontsize=annot_size * 1.2)
     _plt.yticks(rotation=0, fontsize=annot_size * 1.2)
+
+    plt.grid(False)
 
     try:
         _plt.subplots_adjust(hspace=0, bottom=0, top=1)
