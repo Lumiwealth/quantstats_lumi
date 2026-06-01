@@ -54,6 +54,13 @@ in the current internal metrics table output. It is normalized to raw decimal in
 
 - Custom metrics are treated as literal scalars. They do not receive automatic percent/unit conversion.
 
+## Strict JSON
+
+- `metrics_json(..., output=...)` must always write strict RFC-compatible JSON.
+- Raw `NaN`, `Infinity`, and `-Infinity` values are never allowed in output files.
+- Non-finite numeric values inside nested tables, arrays, pandas objects, or drawdown summaries are recursively sanitized before writing.
+- JSON writes use `allow_nan=False` so missed non-finite values fail in tests instead of silently creating invalid artifacts.
+
 ## Guardrails
 
 Regression tests in `tests/test_reports.py` enforce:
@@ -62,4 +69,5 @@ Regression tests in `tests/test_reports.py` enforce:
 - no `%` strings in `scalar_metrics` values,
 - raw-decimal output for risk-free rate and percent-positive-months rows,
 - inclusion of `Worst 1-Month Return` in the full tearsheet metrics table,
-- numeric custom metric preservation in `summary_only` JSON output.
+- numeric custom metric preservation in `summary_only` JSON output,
+- strict JSON output with recursive non-finite value sanitization.

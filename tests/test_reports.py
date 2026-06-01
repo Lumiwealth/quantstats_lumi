@@ -366,6 +366,53 @@ def test_metrics_json_custom_metrics_preserve_numeric_scalars():
     ) < 1e-12
 
 
+def test_metrics_json_output_is_strict_json_with_non_finite_summary_values():
+    import json
+
+    index = pd.date_range(start="2020-01-01", periods=40, freq="B")
+    returns = pd.Series([0.0] * 40, index=index)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+        output_path = tmp.name
+
+    try:
+        result = reports.metrics_json(
+            returns,
+            summary_only=True,
+            output=output_path,
+            custom_metrics={
+                "Custom Missing": float("nan"),
+                "Nested Nonfinite": {"Strategy": float("inf")},
+            },
+        )
+
+        assert result["scalar_metrics"]["Custom Missing"] == "-"
+        assert result["scalar_metrics"]["Nested Nonfinite"]["Strategy"] == "-"
+
+        with open(output_path, "r", encoding="utf-8") as handle:
+            raw = handle.read()
+        assert "NaN" not in raw
+        assert "Infinity" not in raw
+        loaded = json.loads(raw)
+        assert loaded["scalar_metrics"]["Custom Missing"] == "-"
+    finally:
+        os.remove(output_path)
+
+
+def test_json_sanitize_recursively_removes_non_finite_numbers():
+    payload = {
+        "plain": float("nan"),
+        "nested": [{"value": np.float64("inf")}],
+        "array": np.array([1.0, np.nan, -np.inf]),
+    }
+
+    assert reports._json_sanitize(payload) == {
+        "plain": None,
+        "nested": [{"value": None}],
+        "array": [1.0, None, None],
+    }
+
+
 def test_summary_only_scalar_metrics_covers_metrics_table_rows():
     index = pd.date_range(start="2020-01-01", periods=260, freq="B")
     returns = pd.Series([0.001] * 130 + [-0.0012] * 130, index=index, name="Strategy")

@@ -29,7 +29,7 @@ This avoids mixed-version tearsheet behavior and stale local validation.
 For the current tearsheet metrics contract, downstream consumers should require:
 
 ```text
-quantstats-lumi>=1.1.4,<1.2.0
+quantstats-lumi>=1.1.5,<1.2.0
 ```
 
 ## Required secret

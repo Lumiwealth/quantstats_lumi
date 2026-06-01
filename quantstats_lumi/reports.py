@@ -2397,9 +2397,10 @@ def metrics_json(
         }
         if summary_tables:
             result["summary_tables"] = summary_tables
+        result = _json_sanitize(result)
         if output:
             with open(output, "w", encoding="utf-8") as f:
-                json.dump(result, f, indent=2, default=_json_default)
+                json.dump(result, f, indent=2, default=_json_default, allow_nan=False)
         return result
 
     # 2. Time series data
@@ -2508,10 +2509,11 @@ def metrics_json(
         "aggregated": aggregated,
         "drawdowns": drawdowns_list,
     }
+    result = _json_sanitize(result)
 
     if output:
         with open(output, "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2, default=_json_default)
+            json.dump(result, f, indent=2, default=_json_default, allow_nan=False)
 
     return result
 
@@ -2554,6 +2556,9 @@ def _dataframe_to_dict(df):
 
 def _json_default(obj):
     """Default JSON serializer for objects not serializable by default json code."""
+    sanitized = _json_sanitize(obj)
+    if sanitized is not obj:
+        return sanitized
     if isinstance(obj, (_np.integer,)):
         return int(obj)
     if isinstance(obj, (_np.floating,)):
@@ -2565,3 +2570,30 @@ def _json_default(obj):
     if isinstance(obj, _pd.Timestamp):
         return str(obj)
     return str(obj)
+
+
+def _json_sanitize(obj):
+    """Recursively convert objects to strict JSON values with no NaN/Infinity."""
+    if obj is None or isinstance(obj, (str, bool)):
+        return obj
+    if isinstance(obj, (_np.integer, int)):
+        return int(obj)
+    if isinstance(obj, (_np.floating, float)):
+        numeric = float(obj)
+        return None if _np.isnan(numeric) or _np.isinf(numeric) else numeric
+    if isinstance(obj, _np.ndarray):
+        return [_json_sanitize(value) for value in obj.tolist()]
+    if isinstance(obj, _pd.Series):
+        return {str(key): _json_sanitize(value) for key, value in obj.items()}
+    if isinstance(obj, _pd.DataFrame):
+        return {
+            str(index): {str(col): _json_sanitize(value) for col, value in row.items()}
+            for index, row in obj.iterrows()
+        }
+    if isinstance(obj, dict):
+        return {str(key): _json_sanitize(value) for key, value in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_sanitize(value) for value in obj]
+    if hasattr(obj, "isoformat"):
+        return obj.isoformat()
+    return obj
