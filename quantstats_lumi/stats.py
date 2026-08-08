@@ -526,6 +526,64 @@ def probabilistic_adjusted_sortino_ratio(
     )
 
 
+def expected_max_sharpe(trials, sr_std):
+    """
+    Calculates the expected per-period Sharpe of the LUCKIEST of `trials`
+    zero-skill strategies whose Sharpe estimates have standard deviation
+    `sr_std` (Bailey & Lopez de Prado, 2014) — the bar a strategy selected
+    as the best of `trials` attempts must clear.
+
+    Args:
+        * trials (int): Number of strategy variants tried
+        * sr_std (float): Std of the per-period Sharpe estimates across trials
+    """
+    if trials < 1:
+        raise ValueError("trials must be >= 1")
+    if trials == 1:
+        return 0.0
+    euler = 0.5772156649015329
+    z1 = _norm.ppf(1 - 1.0 / trials)
+    z2 = _norm.ppf(1 - 1.0 / (trials * _np.e))
+    return sr_std * ((1 - euler) * z1 + euler * z2)
+
+
+def deflated_sharpe_ratio(
+    series, trials, rf=0.0, periods=365, smart=False, trials_sr_std=None
+):
+    """
+    Calculates the deflated Sharpe ratio (Bailey & Lopez de Prado, 2014):
+    the probability that the true Sharpe exceeds the expected maximum Sharpe
+    of `trials` zero-skill strategies. Where the probabilistic Sharpe ratio
+    asks "is this Sharpe real given the sample size", the deflated version
+    also asks "…given how many attempts were made before picking this one".
+
+    Args:
+        * series (Series, DataFrame): Input return series
+        * trials (int): Number of strategy variants tried before selecting
+          this one (e.g. the optimizer's trial count)
+        * rf (float): Risk-free rate expressed as a yearly (annualized) return
+        * periods (int): Freq. of returns
+        * smart: use the smart sharpe as the base?
+        * trials_sr_std (float): Std of Sharpe estimates across the trials
+          (per-period). Defaults to the null 1/sqrt(n-1) when unknown.
+    """
+    base = sharpe(series, rf, periods=periods, annualize=False, smart=smart)
+    skew_no = skew(series, prepare_returns=False)
+    kurtosis_no = kurtosis(series, prepare_returns=False)  # pandas: excess
+
+    n = len(series)
+    if n < 3:
+        return _np.nan
+    if trials_sr_std is None:
+        trials_sr_std = 1.0 / _np.sqrt(n - 1)
+    bar = expected_max_sharpe(trials, trials_sr_std)
+
+    # PSR denominator with non-excess kurtosis gamma4 = excess + 3
+    denom = 1 - (skew_no * base) + (((kurtosis_no + 3) - 1) / 4) * base**2
+    z = (base - bar) * _np.sqrt(n - 1) / _np.sqrt(denom)
+    return _norm.cdf(z)
+
+
 def treynor_ratio(returns, benchmark, periods=365.0, rf=0.0):
     """
     Calculates the Treynor ratio
