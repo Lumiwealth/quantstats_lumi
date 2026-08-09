@@ -1354,9 +1354,16 @@ def metrics(
     )
     # pass trials=<number of strategy variants tried> to also report the
     # deflated Sharpe ratio (Bailey & Lopez de Prado, 2014)
-    if kwargs.get("trials"):
+    if kwargs.get("trials") is not None:
         metrics["Deflated Sharpe Ratio %"] = (
-            _stats.deflated_sharpe_ratio(df, kwargs["trials"], rf, win_year) * pct
+            _stats.deflated_sharpe_ratio(
+                df,
+                kwargs["trials"],
+                rf,
+                win_year,
+                trials_sr_std=kwargs.get("trials_sr_std"),
+            )
+            * pct
         )
     if mode.lower() == "full":
         metrics["Smart Sharpe"] = _stats.smart_sharpe(df, rf, win_year, True)
