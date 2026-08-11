@@ -566,7 +566,24 @@ def deflated_sharpe_ratio(
         * smart: use the smart sharpe as the base?
         * trials_sr_std (float): Std of Sharpe estimates across the trials
           (per-period). Defaults to the null 1/sqrt(n-1) when unknown.
+
+    For a DataFrame each column is scored separately and the result is a Series
+    indexed by column. Rows holding any missing observation are dropped first, so
+    every column is scored on the same sample.
     """
+    if trials < 1:
+        # A bad trial count is the caller's error, not a property of the data. Checked
+        # here so that the data guards below cannot turn it into a quiet nan.
+        raise ValueError("trials must be >= 1")
+
+    if isinstance(series, (_pd.Series, _pd.DataFrame)):
+        # One observation set for every statistic below. `sharpe` prepares its input
+        # with fillna(0) while `skew` and `kurtosis` read the raw values and skip what
+        # is missing, so a series with gaps would otherwise be scored on two different
+        # samples -- and `n` would count rows that carried no observation at all,
+        # shrinking the 1/sqrt(n-1) noise bar on the strength of absent data.
+        series = series.dropna()
+
     base = sharpe(series, rf, periods=periods, annualize=False, smart=smart)
     skew_no = skew(series, prepare_returns=False)
     kurtosis_no = kurtosis(series, prepare_returns=False)  # pandas: excess
@@ -586,8 +603,12 @@ def deflated_sharpe_ratio(
     # than eps: measured at most 1.96 eps x scale over constant series spanning values
     # 1e-7..1e3 and lengths 3..10000, while a real series with sigma=1e-12 sits more
     # than ten orders of magnitude above n eps x scale.
-    scale = float(_np.nanmax(_np.abs(series)))
-    if not float(_np.nanstd(series, ddof=1)) > n * _np.finfo(float).eps * scale:
+    # Compared column by column: a flat column must not be carried past the guard by a
+    # neighbour that moves, and a genuinely quiet column must not be failed by one.
+    # Reducing the whole frame to one scalar scale and one scalar deviation does both.
+    scale = _np.abs(series).max()
+    has_dispersion = series.std(ddof=1) > n * _np.finfo(float).eps * scale
+    if not isinstance(series, _pd.DataFrame) and not bool(has_dispersion):
         return _np.nan
 
     if trials_sr_std is None:
@@ -597,6 +618,8 @@ def deflated_sharpe_ratio(
     # PSR denominator with non-excess kurtosis gamma4 = excess + 3
     denom = 1 - (skew_no * base) + (((kurtosis_no + 3) - 1) / 4) * base**2
     z = (base - bar) * _np.sqrt(n - 1) / _np.sqrt(denom)
+    if isinstance(series, _pd.DataFrame):
+        return _pd.Series(_norm.cdf(z), index=z.index).where(has_dispersion)
     return _norm.cdf(z)
 
 

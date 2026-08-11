@@ -69,3 +69,60 @@ def test_zero_dispersion_returns_nan():
     # still gets a number.
     quiet = pd.Series(np.random.default_rng(1).normal(0, 1e-8, 250))
     assert 0 <= stats.deflated_sharpe_ratio(quiet, trials=4) <= 1
+
+
+def test_missing_observations_are_not_counted_as_evidence():
+    # `sharpe` fills gaps with zero, `skew` and `kurtosis` skip them. Scored on the
+    # union, a gap-ridden series would inherit a larger n -- and n only ever enters
+    # to say how much the sample pins down.
+    with_gaps = RETURNS.copy()
+    with_gaps.iloc[[5, 17, 31, 48, 72]] = np.nan
+
+    assert stats.deflated_sharpe_ratio(
+        with_gaps, trials=25
+    ) == pytest.approx(stats.deflated_sharpe_ratio(with_gaps.dropna(), trials=25))
+
+
+def test_padding_with_missing_rows_does_not_raise_the_score():
+    padded = pd.concat([RETURNS, pd.Series([np.nan] * 400)], ignore_index=True)
+
+    assert stats.deflated_sharpe_ratio(padded, trials=25) == pytest.approx(
+        stats.deflated_sharpe_ratio(RETURNS, trials=25)
+    )
+
+
+def test_each_column_is_judged_on_its_own_dispersion():
+    # Reducing the frame to one scalar deviation let a flat column ride on its
+    # neighbour's movement -- the same certainty-from-nothing the scalar guard closed.
+    frame = pd.DataFrame({"real": RETURNS, "flat": [0.001] * len(RETURNS)})
+    result = stats.deflated_sharpe_ratio(frame, trials=25)
+
+    assert isinstance(result, pd.Series)
+    assert list(result.index) == ["real", "flat"]
+    assert np.isnan(result["flat"])
+    assert result["real"] == pytest.approx(
+        stats.deflated_sharpe_ratio(RETURNS, trials=25)
+    )
+
+
+def test_a_quiet_column_is_not_failed_by_a_loud_neighbour():
+    quiet = pd.Series(np.random.default_rng(1).normal(0, 1e-8, len(RETURNS)))
+    frame = pd.DataFrame({"loud": RETURNS * 1000, "quiet": quiet})
+    result = stats.deflated_sharpe_ratio(frame, trials=25)
+
+    assert 0 <= result["quiet"] <= 1
+    assert result["quiet"] == pytest.approx(
+        stats.deflated_sharpe_ratio(quiet, trials=25)
+    )
+
+
+@pytest.mark.parametrize(
+    "series",
+    [RETURNS.head(2), pd.Series([0.001] * 250), RETURNS],
+    ids=["too-short", "no-dispersion", "usable"],
+)
+def test_an_invalid_trial_count_is_rejected_whatever_the_data(series):
+    # Otherwise an unusable series answers nan and the caller never learns that the
+    # trial count they passed was the actual problem.
+    with pytest.raises(ValueError):
+        stats.deflated_sharpe_ratio(series, trials=0)
