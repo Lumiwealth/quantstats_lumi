@@ -55,7 +55,14 @@ def test_zero_dispersion_returns_nan():
     # Its standard deviation is floating-point residue rather than an exact zero, so
     # the ratio comes out finite (~1e16) and reaches the deflation arithmetic, which
     # answered 1.0 -- certainty of an edge, from the one input that cannot show one.
-    assert np.isnan(stats.deflated_sharpe_ratio(pd.Series([0.001] * 250), trials=4))
+    # Checked across values and lengths, not at one point: the residue depends on both,
+    # so a guard calibrated on a single series passes while still leaking elsewhere.
+    for value in (1e-7, 1e-4, 0.001, 0.01, 1.0, 100.0):
+        for n in (3, 10, 250, 5000):
+            series = pd.Series([value] * n)
+            assert np.isnan(
+                stats.deflated_sharpe_ratio(series, trials=4)
+            ), f"leaked at value={value}, n={n}"
     assert np.isnan(stats.deflated_sharpe_ratio(pd.Series([0.0] * 250), trials=4))
 
     # The guard is relative to the scale of the data: a real but very quiet series
