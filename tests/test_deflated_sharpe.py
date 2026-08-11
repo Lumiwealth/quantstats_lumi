@@ -48,3 +48,17 @@ def test_deflation_is_monotonic_in_trials():
 
 def test_insufficient_observations_returns_nan():
     assert np.isnan(stats.deflated_sharpe_ratio(RETURNS.head(2), trials=10))
+
+
+def test_zero_dispersion_returns_nan():
+    # A constant series has no dispersion, so no Sharpe ratio and no deflated one.
+    # Its standard deviation is floating-point residue rather than an exact zero, so
+    # the ratio comes out finite (~1e16) and reaches the deflation arithmetic, which
+    # answered 1.0 -- certainty of an edge, from the one input that cannot show one.
+    assert np.isnan(stats.deflated_sharpe_ratio(pd.Series([0.001] * 250), trials=4))
+    assert np.isnan(stats.deflated_sharpe_ratio(pd.Series([0.0] * 250), trials=4))
+
+    # The guard is relative to the scale of the data: a real but very quiet series
+    # still gets a number.
+    quiet = pd.Series(np.random.default_rng(1).normal(0, 1e-8, 250))
+    assert 0 <= stats.deflated_sharpe_ratio(quiet, trials=4) <= 1
