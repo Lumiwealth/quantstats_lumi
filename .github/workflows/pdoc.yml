@@ -1,0 +1,62 @@
+name: DOCUMENTATION
+
+# This workflow generates API documentation for the quantstats_lumi package using pdoc.
+# pdoc is a tool that automatically creates API documentation from Python docstrings.
+# The generated documentation provides a comprehensive reference of all modules, classes, 
+# functions, and methods in the package.
+
+# Trigger the workflow on push events
+# This ensures the documentation is automatically updated whenever code changes are pushed to any branch
+on:
+  push
+
+# Set permissions for the workflow
+permissions:
+  contents: read  # Only read access to repository contents is needed
+  pages: write
+  id-token: write
+
+jobs:
+  pdoc:
+    name: Generate API Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout ${{ github.repository }}
+        uses: actions/checkout@v4
+
+      # Step 2: Set up the Python 3.12
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Step 3: Install all package dependencies from requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt --no-cache-dir
+
+      # Step 4: Install pdoc and generate documentation
+      # The documentation is output to the artifacts/pdoc directory
+      # and specifically targets the quantstats_lumi package
+      - name: Install and build pdoc
+        run: |
+          pip install --no-cache-dir pdoc
+          pdoc -o artifacts/pdoc quantstats_lumi
+
+      # Step 5: Package all artifacts for GitHub Pages deployment
+      # This prepares the combined outputs for deployment by creating a single artifact
+      - name: Upload static files as artifact
+        uses: actions/upload-pages-artifact@v3  # Official GitHub Pages artifact upload action
+        with:
+          path: artifacts/pdoc  # Path to the directory containing all artifacts to deploy
+
+      # Step 6: Deploy the packaged artifacts to GitHub Pages
+      # This step publishes the content to GitHub Pages
+      - name: Deploy to GitHub Pages
+        #if: ${{ !github.event.repository.fork }}
+        uses: actions/deploy-pages@v4  # Official GitHub Pages deployment action
+
+
