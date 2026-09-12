@@ -526,6 +526,103 @@ def probabilistic_adjusted_sortino_ratio(
     )
 
 
+def expected_max_sharpe(trials, sr_std):
+    """
+    Calculates the expected per-period Sharpe of the LUCKIEST of `trials`
+    zero-skill strategies whose Sharpe estimates have standard deviation
+    `sr_std` (Bailey & Lopez de Prado, 2014) — the bar a strategy selected
+    as the best of `trials` attempts must clear.
+
+    Args:
+        * trials (int): Number of strategy variants tried
+        * sr_std (float): Std of the per-period Sharpe estimates across trials
+    """
+    if trials < 1:
+        raise ValueError("trials must be >= 1")
+    if trials == 1:
+        return 0.0
+    euler = 0.5772156649015329
+    z1 = _norm.ppf(1 - 1.0 / trials)
+    z2 = _norm.ppf(1 - 1.0 / (trials * _np.e))
+    return sr_std * ((1 - euler) * z1 + euler * z2)
+
+
+def deflated_sharpe_ratio(
+    series, trials, rf=0.0, periods=365, smart=False, trials_sr_std=None
+):
+    """
+    Calculates the deflated Sharpe ratio (Bailey & Lopez de Prado, 2014):
+    the probability that the true Sharpe exceeds the expected maximum Sharpe
+    of `trials` zero-skill strategies. Where the probabilistic Sharpe ratio
+    asks "is this Sharpe real given the sample size", the deflated version
+    also asks "…given how many attempts were made before picking this one".
+
+    Args:
+        * series (Series, DataFrame): Input return series
+        * trials (int): Number of strategy variants tried before selecting
+          this one (e.g. the optimizer's trial count)
+        * rf (float): Risk-free rate expressed as a yearly (annualized) return
+        * periods (int): Freq. of returns
+        * smart: use the smart sharpe as the base?
+        * trials_sr_std (float): Std of Sharpe estimates across the trials
+          (per-period). Defaults to the null 1/sqrt(n-1) when unknown.
+
+    For a DataFrame each column is scored separately and the result is a Series
+    indexed by column. Rows holding any missing observation are dropped first, so
+    every column is scored on the same sample.
+    """
+    if trials < 1:
+        # A bad trial count is the caller's error, not a property of the data. Checked
+        # here so that the data guards below cannot turn it into a quiet nan.
+        raise ValueError("trials must be >= 1")
+
+    if isinstance(series, (_pd.Series, _pd.DataFrame)):
+        # One observation set for every statistic below. `sharpe` prepares its input
+        # with fillna(0) while `skew` and `kurtosis` read the raw values and skip what
+        # is missing, so a series with gaps would otherwise be scored on two different
+        # samples -- and `n` would count rows that carried no observation at all,
+        # shrinking the 1/sqrt(n-1) noise bar on the strength of absent data.
+        series = series.dropna()
+
+    base = sharpe(series, rf, periods=periods, annualize=False, smart=smart)
+    skew_no = skew(series, prepare_returns=False)
+    kurtosis_no = kurtosis(series, prepare_returns=False)  # pandas: excess
+
+    n = len(series)
+    if n < 3:
+        return _np.nan
+
+    # A series with no dispersion has no Sharpe ratio, but it does not arrive here as
+    # a nan: the standard deviation of a constant series is floating-point residue
+    # rather than an exact zero, so a flat 0.1% series divides out to a Sharpe of
+    # ~1e16 -- finite, and therefore past every isfinite guard. Deflating that returned
+    # 1.0, i.e. certainty of a real edge, for the one input carrying no information
+    # about one. Compare against the resolution of a float at the scale of the data, so
+    # a genuinely low-volatility series still gets a number.
+    # The residue grows with the number of terms summed, so the floor is n eps rather
+    # than eps: measured at most 1.96 eps x scale over constant series spanning values
+    # 1e-7..1e3 and lengths 3..10000, while a real series with sigma=1e-12 sits more
+    # than ten orders of magnitude above n eps x scale.
+    # Compared column by column: a flat column must not be carried past the guard by a
+    # neighbour that moves, and a genuinely quiet column must not be failed by one.
+    # Reducing the whole frame to one scalar scale and one scalar deviation does both.
+    scale = _np.abs(series).max()
+    has_dispersion = series.std(ddof=1) > n * _np.finfo(float).eps * scale
+    if not isinstance(series, _pd.DataFrame) and not bool(has_dispersion):
+        return _np.nan
+
+    if trials_sr_std is None:
+        trials_sr_std = 1.0 / _np.sqrt(n - 1)
+    bar = expected_max_sharpe(trials, trials_sr_std)
+
+    # PSR denominator with non-excess kurtosis gamma4 = excess + 3
+    denom = 1 - (skew_no * base) + (((kurtosis_no + 3) - 1) / 4) * base**2
+    z = (base - bar) * _np.sqrt(n - 1) / _np.sqrt(denom)
+    if isinstance(series, _pd.DataFrame):
+        return _pd.Series(_norm.cdf(z), index=z.index).where(has_dispersion)
+    return _norm.cdf(z)
+
+
 def treynor_ratio(returns, benchmark, periods=365.0, rf=0.0):
     """
     Calculates the Treynor ratio
