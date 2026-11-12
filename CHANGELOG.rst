@@ -1,6 +1,11 @@
 Change Log
 ===========
 
+1.1.6
+-----
+- Keep nonzero total returns below one percent visible in tear sheet headlines, metric tables and metrics JSON, instead of rounding them to zero. Very small returns retain significant digits; existing large-return labels are unchanged.
+- Preserve trading results, return calculations, date alignment and annualization. Nine targeted numeric/HTML cases and the existing date-alignment control pass locally; no model calls are involved.
+
 1.1.4
 -----
 - Fix HTML tearsheet summary metrics honoring `match_dates=False`, keeping HTML/CSV aligned with `tearsheet_metrics.json`.

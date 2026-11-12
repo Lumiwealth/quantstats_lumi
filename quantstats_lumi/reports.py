@@ -1207,6 +1207,17 @@ def _annualized_return_on_risk_capital(
 
     return (total_return / risk_capital) * (float(periods_per_year) / float(trading_days))
 
+def _format_total_return_percent(value):
+    """Keep nonzero changes visible while preserving large-return labels."""
+    if value == 0:
+        return "0%"
+    if abs(value) < 0.005:
+        return "{:.2g}%".format(value)
+    if abs(value) < 1:
+        return "{:,.2f}%".format(value)
+    return "{:,.0f}%".format(value)
+
+
 def metrics(
     returns,
     benchmark=None,
@@ -1336,7 +1347,7 @@ def metrics(
     metrics["~"] = blank
 
     if compounded:
-        metrics["Total Return"] = (_stats.comp(df) * pct).map("{:,.0f}%".format)  # No decimals for readability as it is a large number
+        metrics["Total Return"] = (_stats.comp(df) * pct).map(_format_total_return_percent)
     else:
         metrics["Total Return"] = (df.sum() * pct).map("{:,.2f}%".format)
 
