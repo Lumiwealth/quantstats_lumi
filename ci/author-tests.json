@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "path": "tests/test_small_total_return.py",
+      "reason": "Small signed compounded returns retain meaningful precision in numeric and HTML report headings."
+    },
+    {
+      "path": "tests/test_reports.py::test_html_tearsheet_summary_honors_match_dates_false",
+      "reason": "Preserve benchmark alignment and the existing report summary contract."
+    }
+  ]
+}
